@@ -30,7 +30,7 @@ COAPPacket::COAPPacket(uint8_t* data, size_t len, string address)
     packet_log("  id   0x%02X\n", hdr.mid);
 
 
-    for(int i=0; i<m_options.size(); i++)
+    for(uint16_t i=0; i<m_options.size(); i++)
     {
         packet_log("option %d\n", i);
         packet_log("    num %d\n", (*m_options.at(i)).getNumber());
@@ -117,7 +117,6 @@ bool COAPPacket::parseOption(uint16_t *running_delta, const uint8_t **buf, size_
 int COAPPacket::build(uint8_t *buf, size_t *buflen)
 {
     size_t opts_len = 0;
-    size_t i;
     uint8_t *p;
     uint16_t running_delta = 0;
 
@@ -131,7 +130,7 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
     // inject token
     p = buf + 4;
 
-    for (int i=0; i<m_token.size();i++)
+    for (uint8_t i=0; i<m_token.size();i++)
         *(p++) = m_token.at(i);
 
     for ( auto i = m_options.begin(); i != m_options.end(); i++ ) {
@@ -156,7 +155,7 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
         }
         if (option->getData()->size() > 15)
         {
-            *p++ = 0xFF & option->getData()->size()-15;
+            *p++ = 0xFF & (option->getData()->size()-15);
         }
 
         for (uint16_t i=0; i<option->getData()->size();i++){
@@ -172,7 +171,7 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
     {
         buf[4 + opts_len] = 0xFF;  // payload marker
 
-        for (int i=0; i<m_payload.size(); i++){
+        for (uint16_t i=0; i<m_payload.size(); i++){
             buf[5 + opts_len +i ] = m_payload.at(i);  // payload marker
         }
         *buflen = opts_len + 5 + m_payload.size();
@@ -185,14 +184,14 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
 
 string COAPPacket::getUri(){
     string uri;
-    for(int i=0; i<m_options.size(); i++) {
+    for(uint8_t i=0; i<m_options.size(); i++) {
         packet_log("option %d\n", i);
         if ((*m_options.at(i)).getNumber() == COAP_OPTION_URI_PATH){
             uri.append("/");
             vector<uint8_t>* data = (*m_options.at(i)).getData();
 
-            for(int i=0; i<data->size(); i++) {
-                uri += data->at(i);
+            for(uint16_t j=0; j<data->size(); j++) {
+                uri += data->at(j);
             }
         }
     }
@@ -222,7 +221,7 @@ COAPPacket::COAPPacket(){
 }
 
 void COAPPacket::addPayload(string payload){
-    for (int i=0; i<payload.size(); i++){
+    for (uint16_t i=0; i<payload.size(); i++){
         m_payload.push_back(payload.at(i));
     }
 }
@@ -235,7 +234,7 @@ void COAPPacket::addPayload(uint8_t* payload, uint16_t size){
 
 COAPOption* COAPPacket::getOption(coap_option_num_t option){
 
-    for(int i=0; i<m_options.size(); i++) {
+    for(uint8_t i=0; i<m_options.size(); i++) {
         if ((*m_options.at(i)).getNumber() == option){
             return m_options.at(i);
         }
