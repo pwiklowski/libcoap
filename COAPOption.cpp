@@ -1,6 +1,6 @@
 #include "COAPOption.h"
 
-COAPOption::COAPOption(uint8_t num, vector<uint8_t> data)
+COAPOption::COAPOption(uint8_t num, List<uint8_t> data)
 {
     m_num = num;
     m_data = data;
@@ -12,7 +12,7 @@ COAPOption::COAPOption(uint8_t num, char* data)
 
     char* b = data;
     while(*(b) != 0){
-        m_data.push_back(*b);
+        m_data.append(*b);
         b++;
     }
 }

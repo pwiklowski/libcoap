@@ -1,6 +1,6 @@
 #include "COAPServer.h"
 #include <cstdio>
-#include <string.h>
+#include "String.h"
 #include "log.h"
 #include "COAPObserver.h"
 
@@ -10,12 +10,6 @@ using namespace std;
 COAPServer::COAPServer(COAPSend sender)
 {
     m_sender = sender;
-
-
-    vector<uint8_t> t;
-    t.push_back(1);
-    t.push_back(4);
-
 }
 
 
@@ -26,24 +20,24 @@ void COAPServer::handleMessage(COAPPacket* p){
     {
         uint16_t messageId = p->getHeader()->mid;
 
-        auto endpoint = m_responseHandlers.find(messageId);
-        if (endpoint != m_responseHandlers.end()){
-            endpoint->second(p);
+        COAPResponseHandler* handler = m_responseHandlers.get(messageId);
+        if (handler != 0 ){
+            (*handler)(p);
 
             COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
 
             if (observeOption !=0){
-                COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), p->getToken(), endpoint->second);
-                m_observers.push_back(obs);
+                COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), p->getToken(), *handler);
+                m_observers.append(obs);
             }
             log("Remove response handler %d\n", messageId);
             if (messageId != 0) //0 is reserverd mid or discovery
-                m_responseHandlers.erase(endpoint);
+                m_responseHandlers.remove(messageId);
         }
     }
     else if (p->getHeader()->t == COAP_TYPE_CON)
     {
-        string uri = p->getUri();
+        String uri = p->getUri();
         log("handle request %s\n", uri.c_str());
 
         COAPPacket* response = new COAPPacket();
@@ -52,7 +46,7 @@ void COAPServer::handleMessage(COAPPacket* p){
         response->setAddress(p->getAddress());
         response->setMessageId(p->getHeader()->mid);
 
-        vector<uint8_t> t = p->getToken();
+        List<uint8_t> t = p->getToken();
 
         if (t.size() == 2){
             uint16_t token = t.at(1) << 8 | t.at(0);
@@ -67,10 +61,10 @@ void COAPServer::handleMessage(COAPPacket* p){
 
             if (observe == 0){
                 COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), p->getToken());
-                m_observers.push_back(obs);
+                m_observers.append(obs);
 
-                vector<uint8_t> d;
-                d.push_back(obs->getNumber());
+                List<uint8_t> d;
+                d.append(obs->getNumber());
 
                 response->addOption(new COAPOption(COAP_OPTION_OBSERVE, d));
             }
@@ -93,9 +87,9 @@ void COAPServer::handleMessage(COAPPacket* p){
             }
         }
 
-        auto endpoint = m_callbacks.find(uri);
-        if (endpoint != m_callbacks.end()){
-            bool success = endpoint->second(this, p, response);
+        COAPCallback* callback = m_callbacks.get(uri);
+        if (callback !=0){
+            bool success = (*callback)(this, p, response);
             if (!success){
                 response->setResonseCode(COAP_RSPCODE_FORBIDDEN);
             }
@@ -108,15 +102,15 @@ void COAPServer::handleMessage(COAPPacket* p){
 }
 
 
-void COAPServer::addResource(string url, COAPCallback callback){
-    m_callbacks.insert(make_pair(url, callback));
+void COAPServer::addResource(String url, COAPCallback callback){
+    m_callbacks.insert(url, callback);
 }
 
 void COAPServer::addResponseHandler(uint16_t messageId, COAPResponseHandler handler){
-    m_responseHandlers.insert(make_pair(messageId, handler));
+    m_responseHandlers.insert(messageId, handler);
 }
 
-void COAPServer::notify(string href, vector<uint8_t> data){
+void COAPServer::notify(String href, List<uint8_t> data){
     for(uint16_t i=0; i<m_observers.size(); i++){
         COAPObserver* o = m_observers.at(i);
 
@@ -129,23 +123,23 @@ void COAPServer::notify(string href, vector<uint8_t> data){
             p->setResonseCode(COAP_RSPCODE_CONTENT);
             p->setToken(o->getToken());
 
-            vector<uint8_t> obs;
-            obs.push_back(o->getNumber());
+            List<uint8_t> obs;
+            obs.append(o->getNumber());
             p->addOption(new COAPOption(COAP_OPTION_OBSERVE, obs));
 
-            vector<uint8_t> part;
+            List<uint8_t> part;
             for(uint16_t j=1; j<href.size();j++){
                 if (href.at(j) == '/'){
                     p->addOption(new COAPOption(COAP_OPTION_URI_PATH, part));
                     part.clear();
                 }else{
-                    part.push_back(href.at(j));
+                    part.append(href.at(j));
                 }
             }
 
-            vector<uint8_t> content_type;
-            content_type.push_back(((uint16_t)COAP_CONTENTTYPE_CBOR & 0xFF00) >> 8);
-            content_type.push_back(((uint16_t)COAP_CONTENTTYPE_CBOR & 0xFF));
+            List<uint8_t> content_type;
+            content_type.append(((uint16_t)COAP_CONTENTTYPE_CBOR & 0xFF00) >> 8);
+            content_type.append(((uint16_t)COAP_CONTENTTYPE_CBOR & 0xFF));
 
             p->addOption(new COAPOption(COAP_OPTION_CONTENT_FORMAT, content_type));
             p->addPayload(data);

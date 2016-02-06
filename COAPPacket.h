@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string>
+#include "String.h"
 #include "COAPOption.h"
 
 
@@ -94,44 +94,44 @@ typedef enum
 class COAPPacket
 {
 public:
-    COAPPacket(uint8_t *data, size_t len, string address);
+    COAPPacket(uint8_t *data, size_t len, String address);
     COAPPacket();
 
-    std::string getUri();
+    String getUri();
 
     int build(uint8_t *buf, size_t *buflen);
 
     coap_header_t* getHeader(){ return &hdr;}
-    vector<uint8_t> getToken(){ return m_token;}
+    List<uint8_t> getToken(){ return m_token;}
 
-    vector<uint8_t>* getPayload(){ return &m_payload; }
+    List<uint8_t>* getPayload(){ return &m_payload; }
 
 
-    void addOption(COAPOption* option){ m_options.push_back(option);}
-    void addPayload(vector<uint8_t> payload){ m_payload = payload; }
-    void addPayload(string payload);
+    void addOption(COAPOption* option){ m_options.append(option);}
+    void addPayload(List<uint8_t> payload){ m_payload = payload; }
+    void addPayload(String payload);
     void addPayload(uint8_t* payload, uint16_t size);
 
     void setType(uint16_t type){ hdr.t = type;}
     void setResonseCode(uint8_t responseCode){ hdr.code = responseCode; }
 
-    string getAddress() { return m_address;}
-    void setAddress(string address) { m_address = address;}
+    String getAddress() { return m_address;}
+    void setAddress(String address) { m_address = address;}
 
-    void setToken(uint16_t token){ hdr.tkl = 2; m_token.push_back(token); m_token.push_back(token >> 8); }
-    void setToken(vector<uint8_t> token){ hdr.tkl = token.size(); m_token = token; }
+    void setToken(uint16_t token){ hdr.tkl = 2; m_token.append(token); m_token.append(token >> 8); }
+    void setToken(List<uint8_t> token){ hdr.tkl = token.size(); m_token = token; }
     void setMessageId(uint16_t id){hdr.mid = id;}
 
 
     COAPOption* getOption(coap_option_num_t option);
 
-    static void parseUri(COAPPacket* p, string uri);
+    static void parseUri(COAPPacket* p, String uri);
 private:
     coap_header_t hdr;          /* Header of the packet */
-    vector<uint8_t> m_token;          /* Token value, size as specified by hdr.tkl */
-    vector<uint8_t> m_payload;
-    vector<COAPOption*> m_options;
-    string m_address;
+    List<uint8_t> m_token;          /* Token value, size as specified by hdr.tkl */
+    List<uint8_t> m_payload;
+    List<COAPOption*> m_options;
+    String m_address;
 
     bool parseHeader(coap_header_t *hdr, const uint8_t *buf, size_t buflen);
     bool parseToken(const coap_header_t *hdr, const uint8_t *buf, size_t buflen);

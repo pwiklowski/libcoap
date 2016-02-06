@@ -12,7 +12,7 @@ using namespace std;
 
 
 
-COAPPacket::COAPPacket(uint8_t* data, size_t len, string address)
+COAPPacket::COAPPacket(uint8_t* data, size_t len, String address)
 {
     if (!parseHeader(&hdr, data, len))
         return;
@@ -60,7 +60,7 @@ bool COAPPacket::parseToken(const coap_header_t *hdr, const uint8_t *buf, size_t
         if (4U + hdr->tkl > buflen)
             return false;
         for (int i=0; i<hdr->tkl;i++)
-            m_token.push_back(*(buf+4+i));
+            m_token.append(*(buf+4+i));
         return true;
     }
     return false;
@@ -82,7 +82,7 @@ bool COAPPacket::parseOptions(const coap_header_t *hdr, const uint8_t *buf, size
     if (p+1 < end && *p == 0xFF)  // payload marker
     {
         while(p<=end){
-            m_payload.push_back(*(p+1));
+            m_payload.append(*(p+1));
             p++;
         }
     }
@@ -97,18 +97,18 @@ bool COAPPacket::parseOption(uint16_t *running_delta, const uint8_t **buf, size_
     delta = (p[0] & 0xF0) >> 4;
     len = p[0] & 0x0F;
 
-    vector<uint8_t> data;
+    List<uint8_t> data;
 
     if (len == 15){
         len = 15 + p[1];
-        for (int i=0; i<len;i++) data.push_back(*(p+2+i));
+        for (int i=0; i<len;i++) data.append(*(p+2+i));
         *buf = p + 2 + len;
     }else{
-        for (int i=0; i<len;i++) data.push_back(*(p+1+i));
+        for (int i=0; i<len;i++) data.append(*(p+1+i));
         *buf = p + 1 + len;
     }
 
-    m_options.push_back(new COAPOption(delta + *running_delta, data));
+    m_options.append(new COAPOption(delta + *running_delta, data));
     *running_delta += delta;
     return true;
 }
@@ -182,16 +182,16 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
 }
 
 
-string COAPPacket::getUri(){
-    string uri;
+String COAPPacket::getUri(){
+    String uri;
     for(uint8_t i=0; i<m_options.size(); i++) {
         packet_log("option %d\n", i);
         if ((*m_options.at(i)).getNumber() == COAP_OPTION_URI_PATH){
             uri.append("/");
-            vector<uint8_t>* data = (*m_options.at(i)).getData();
+            List<uint8_t>* data = (*m_options.at(i)).getData();
 
             for(uint16_t j=0; j<data->size(); j++) {
-                uri += data->at(j);
+                uri.append(data->at(j));
             }
         }
     }
@@ -199,7 +199,7 @@ string COAPPacket::getUri(){
 }
 
 
-void COAPPacket::parseUri(COAPPacket* p, string uri){
+void COAPPacket::parseUri(COAPPacket* p, String uri){
     size_t start = 1;
     int end;
 
@@ -220,15 +220,15 @@ COAPPacket::COAPPacket(){
     hdr.mid =0;
 }
 
-void COAPPacket::addPayload(string payload){
+void COAPPacket::addPayload(String payload){
     for (uint16_t i=0; i<payload.size(); i++){
-        m_payload.push_back(payload.at(i));
+        m_payload.append(payload.at(i));
     }
 }
 
 void COAPPacket::addPayload(uint8_t* payload, uint16_t size){
     for (int i=0; i<size; i++){
-        m_payload.push_back(*(payload+i));
+        m_payload.append(*(payload+i));
     }
 }
 

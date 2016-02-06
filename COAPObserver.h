@@ -1,34 +1,32 @@
 #ifndef COAPOBSERVER_H
 #define COAPOBSERVER_H
 
-#include <string>
-#include <vector>
+#include "String.h"
+#include "List.h"
 #include <stdint.h>
 #include <functional>
 #include "COAPServer.h"
 
 
-using namespace std;
-
 class COAPObserver
 {
 public:
-    COAPObserver(string address, string href, vector<uint8_t> token);
-    COAPObserver(string address, string href, vector<uint8_t> token, COAPResponseHandler handler);
+    COAPObserver(String address, String href, List<uint8_t> token);
+    COAPObserver(String address, String href, List<uint8_t> token, COAPResponseHandler handler);
     void notify();
 
-    string getHref() { return m_href; }
-    string getAddress() { return m_address; }
-    vector<uint8_t> getToken() { return m_token; }
+    String getHref() { return m_href; }
+    String getAddress() { return m_address; }
+    List<uint8_t> getToken() { return m_token; }
 
     uint8_t getNumber() { return m_number++;}
 
     void handle(COAPPacket* p){m_handler(p);}
 
 private:
-    string m_href;
-    string m_address;
-    vector<uint8_t> m_token;
+    String m_href;
+    String m_address;
+    List<uint8_t> m_token;
     uint8_t m_number;
     COAPResponseHandler m_handler;
 };

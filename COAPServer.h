@@ -1,12 +1,14 @@
 #ifndef COAPServer_H
 #define COAPServer_H
 
-#include <string>
+#include "String.h"
 #include "COAPPacket.h"
-#include <vector>
-#include <map>
+#include "List.h"
+#include "Map.h"
 #include <functional>
 #include <iostream>
+
+
 
 class COAPServer;
 class COAPObserver;
@@ -22,30 +24,30 @@ public:
     COAPServer(COAPSend sender);
 
     void handleMessage(COAPPacket* p);
-    void addResource(string url, COAPCallback callback);
+    void addResource(String url, COAPCallback callback);
     void addResponseHandler(uint16_t messageId, COAPResponseHandler handler);
 
-    void setIp(string ip){ m_ip = ip; }
-    string getIp(){ return m_ip; }
+    void setIp(String ip){ m_ip = ip; }
+    String getIp(){ return m_ip; }
 
 
-    void setInterface(string interface){ m_interface = interface; }
-    string getInterface(){ return m_interface; }
+    void setInterface(String interface){ m_interface = interface; }
+    String getInterface(){ return m_interface; }
 
-    void notify(string href, vector<uint8_t> data);
+    void notify(String href, List<uint8_t> data);
 
     void setDiscoveryResponseHandler(uint16_t h){m_discoveryResponseHandlerId = h;}
 private:
     COAPSend m_sender;
-    map<string, COAPCallback> m_callbacks;
-    map<uint16_t, COAPResponseHandler> m_responseHandlers;
+    Map<String, COAPCallback> m_callbacks;
+    Map<uint16_t, COAPResponseHandler> m_responseHandlers;
     uint16_t m_discoveryResponseHandlerId;
 
-    string m_ip;
-    string m_interface;
+    String m_ip;
+    String m_interface;
     uint16_t m_port;
 
-    vector<COAPObserver*> m_observers;
+    List<COAPObserver*> m_observers;
 };
 
 #endif // COAPPacket_H
