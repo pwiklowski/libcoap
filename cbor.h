@@ -1,9 +1,9 @@
 #ifndef CBOR_H
 #define CBOR_H
 
-#include <string>
-#include <vector>
-#include "map"
+#include "String.h"
+#include "List.h"
+#include "Map.h"
 
 using namespace std;
 
@@ -11,7 +11,7 @@ enum CborType_t {
     CBOR_TYPE_UNSIGNED,
     CBOR_TYPE_NEGATIVE,
     CBOR_TYPE_BINARY,
-    CBOR_TYPE_STRING,
+    CBOR_TYPE_String,
     CBOR_TYPE_ARRAY,
     CBOR_TYPE_MAP,
     CBOR_TYPE_TAGGED,
@@ -23,7 +23,7 @@ enum CborType_t {
 class cbor{
 public:
 
-    static cbor* parse(vector<uint8_t>* data, uint16_t* p = 0){
+    static cbor* parse(List<uint8_t>* data, uint16_t* p = 0){
         if(data->size() == 0)return 0;
         uint16_t pointer;
         if (p == 0)
@@ -58,9 +58,9 @@ public:
         if (majorType == CBOR_TYPE_ARRAY){
             for (uint16_t i=0; i<value; i++)
                 aa->append(cbor::parse(data, &pointer));
-        }else if (majorType == CBOR_TYPE_STRING){
+        }else if (majorType == CBOR_TYPE_String){
             for (uint16_t i=0; i<value; i++)
-                aa->data()->push_back(data->at(pointer++));
+                aa->data()->append(data->at(pointer++));
         }else if (majorType == CBOR_TYPE_MAP){
             for (uint16_t i=0; i<value; i++){
                 cbor* key = cbor::parse(data, &pointer);
@@ -69,24 +69,24 @@ public:
             }
         }else if (majorType == CBOR_TYPE_NEGATIVE || majorType == CBOR_TYPE_UNSIGNED){
             if(value < 256ULL) {
-                aa->data()->push_back(value);
+                aa->data()->append(value);
             } else if(value < 65536ULL) {
-                aa->data()->push_back(value >> 8);
-                aa->data()->push_back(value);
+                aa->data()->append(value >> 8);
+                aa->data()->append(value);
             } else if(value < 4294967296ULL) {
-                aa->data()->push_back(value >> 24);
-                aa->data()->push_back(value >> 16);
-                aa->data()->push_back(value >> 8);
-                aa->data()->push_back(value);
+                aa->data()->append(value >> 24);
+                aa->data()->append(value >> 16);
+                aa->data()->append(value >> 8);
+                aa->data()->append(value);
             } else {
-                aa->data()->push_back(value >> 56);
-                aa->data()->push_back(value >> 48);
-                aa->data()->push_back(value >> 40);
-                aa->data()->push_back(value >> 32);
-                aa->data()->push_back(value >> 24);
-                aa->data()->push_back(value >> 16);
-                aa->data()->push_back(value >> 8);
-                aa->data()->push_back(value);
+                aa->data()->append(value >> 56);
+                aa->data()->append(value >> 48);
+                aa->data()->append(value >> 40);
+                aa->data()->append(value >> 32);
+                aa->data()->append(value >> 24);
+                aa->data()->append(value >> 16);
+                aa->data()->append(value >> 8);
+                aa->data()->append(value);
             }
 
         }
@@ -100,24 +100,14 @@ public:
     }
     ~cbor(){
         m_data.clear();
-
-        for(uint16_t i=0;i<m_array.size();i++){
-            delete m_array.at(i);
-        }
-        for(auto key = m_map.begin(); key!=m_map.end(); key++){
-            pair<cbor*, cbor*> p = *key;
-
-            delete p.first;
-            delete p.second;
-        }
-
     }
 
-    cbor(string str) {
-        m_type = CBOR_TYPE_STRING;
+    cbor(String str) {
+        m_type = CBOR_TYPE_String;
         for(uint16_t i=0; i<str.size();i++)
-            m_data.push_back(str.at(i));
+            m_data.append(str.at(i));
     }
+
 
     cbor(long long v) {
         unsigned long long value;
@@ -130,31 +120,31 @@ public:
         }
 
         if(value < 256ULL) {
-            m_data.push_back(value);
+            m_data.append(value);
         } else if(value < 65536ULL) {
-            m_data.push_back(value >> 8);
-            m_data.push_back(value);
+            m_data.append(value >> 8);
+            m_data.append(value);
         } else if(value < 4294967296ULL) {
-            m_data.push_back(value >> 24);
-            m_data.push_back(value >> 16);
-            m_data.push_back(value >> 8);
-            m_data.push_back(value);
+            m_data.append(value >> 24);
+            m_data.append(value >> 16);
+            m_data.append(value >> 8);
+            m_data.append(value);
         } else {
-            m_data.push_back(value >> 56);
-            m_data.push_back(value >> 48);
-            m_data.push_back(value >> 40);
-            m_data.push_back(value >> 32);
-            m_data.push_back(value >> 24);
-            m_data.push_back(value >> 16);
-            m_data.push_back(value >> 8);
-            m_data.push_back(value);
+            m_data.append(value >> 56);
+            m_data.append(value >> 48);
+            m_data.append(value >> 40);
+            m_data.append(value >> 32);
+            m_data.append(value >> 24);
+            m_data.append(value >> 16);
+            m_data.append(value >> 8);
+            m_data.append(value);
         }
 
 
 
     }
 
-    cbor(vector<cbor*> array) {
+    cbor(List<cbor*> array) {
         m_type = CBOR_TYPE_ARRAY;
         m_array = array;
     }
@@ -175,7 +165,7 @@ public:
         return m_type;
     }
 
-    vector< pair<cbor*, cbor*> >* toMap() {
+    Map<cbor*, cbor*>* toMap() {
         if (m_type == CBOR_TYPE_MAP)
             return &m_map;
         else
@@ -183,51 +173,50 @@ public:
     }
 
 
-   cbor* getMapValue(string key) {
+   cbor* getMapValue(String key) {
        if (m_type != CBOR_TYPE_MAP)
            return 0;
 
-       for(auto item = m_map.begin();item !=m_map.end(); item++){
-           pair<cbor*, cbor*> p = *item ;
+       for(cbor* k: m_map){
 
-           if (p.first->compare(key)){
-                return p.second;
+           if (k->compare(key)){
+                return *m_map.get(k);
            }
        }
        return 0;
 
     }
 
-   //workd only for strings
-    bool compare(string str){
+   //workd only for Strings
+    bool compare(String str){
         if (str.size() != m_data.size())
             return false;
 
         for (uint16_t i=0; i<str.size(); i++){
-            if (str[i] != m_data[i])
+            if (str.at(i) != m_data.at(i))
                 return false;
         }
         return true;
     }
 
     void append(cbor* key, cbor* value){
-        m_map.push_back(make_pair(key, value));
+        m_map.insert(key, value);
     }
     void append(cbor* value){
-        m_array.push_back(value);
+        m_array.append(value);
     }
 
-    vector<cbor*>* toArray() {
+    List<cbor*>* toArray() {
         if (m_type == CBOR_TYPE_ARRAY)
             return &m_array;
         else
             return 0;
     }
 
-    string toString(){
-        string out;
+    String toString(){
+        String out;
         for(uint16_t i=0; i<m_data.size();i++)
-            out += m_data.at(i);
+            out.append(m_data.at(i));
         return out;
     }
 
@@ -249,12 +238,12 @@ public:
         return value;
     }
 
-    vector<uint8_t>* data(){
+    List<uint8_t>* data(){
         return &m_data;
     }
 
 
-    void dump(vector<uint8_t>* data){
+    void dump(List<uint8_t>* data){
        uint8_t majorType = m_type << 5;
 
        unsigned long long value = 0;
@@ -262,52 +251,52 @@ public:
            value = m_array.size();
        }else if (m_type == CBOR_TYPE_MAP){
            value = m_map.size();
-       }else if (m_type == CBOR_TYPE_STRING){
+       }else if (m_type == CBOR_TYPE_String){
            value = m_data.size();
        }else if (m_type == CBOR_TYPE_UNSIGNED || m_type == CBOR_TYPE_NEGATIVE){
             if (m_data.size() == 1){
                 if (m_data.at(0) < 24){
-                    data->push_back(majorType | m_data.at(0));
+                    data->append(majorType | m_data.at(0));
                 }else{
-                    data->push_back(majorType | 24);
-                    data->push_back(m_data.at(0));
+                    data->append(majorType | 24);
+                    data->append(m_data.at(0));
                 }
             }else if (m_data.size() > 1){
 
-                if (m_data.size() == 2) data->push_back(majorType | 25);
-                if (m_data.size() == 4) data->push_back(majorType | 26);
-                if (m_data.size() == 8) data->push_back(majorType | 27);
+                if (m_data.size() == 2) data->append(majorType | 25);
+                if (m_data.size() == 4) data->append(majorType | 26);
+                if (m_data.size() == 8) data->append(majorType | 27);
 
-                for (uint16_t i=0; i<m_data.size(); i++) data->push_back(m_data.at(i));
+                for (uint16_t i=0; i<m_data.size(); i++) data->append(m_data.at(i));
             }
        }
 
        if (m_type != CBOR_TYPE_UNSIGNED && m_type != CBOR_TYPE_NEGATIVE){
            if(value < 24ULL) {
-               data->push_back(majorType | value);
+               data->append(majorType | value);
            } else if(value < 256ULL) {
-               data->push_back(majorType | 24);
-               data->push_back(value);
+               data->append(majorType | 24);
+               data->append(value);
            } else if(value < 65536ULL) {
-               data->push_back(majorType | 25);
-               data->push_back(value >> 8);
-               data->push_back(value);
+               data->append(majorType | 25);
+               data->append(value >> 8);
+               data->append(value);
            } else if(value < 4294967296ULL) {
-               data->push_back(majorType | 26);
-               data->push_back(value >> 24);
-               data->push_back(value >> 16);
-               data->push_back(value >> 8);
-               data->push_back(value);
+               data->append(majorType | 26);
+               data->append(value >> 24);
+               data->append(value >> 16);
+               data->append(value >> 8);
+               data->append(value);
            } else {
-               data->push_back(majorType | 27);
-               data->push_back(value >> 56);
-               data->push_back(value >> 48);
-               data->push_back(value >> 40);
-               data->push_back(value >> 32);
-               data->push_back(value >> 24);
-               data->push_back(value >> 16);
-               data->push_back(value >> 8);
-               data->push_back(value);
+               data->append(majorType | 27);
+               data->append(value >> 56);
+               data->append(value >> 48);
+               data->append(value >> 40);
+               data->append(value >> 32);
+               data->append(value >> 24);
+               data->append(value >> 16);
+               data->append(value >> 8);
+               data->append(value);
            }
        }
 
@@ -317,15 +306,15 @@ public:
                m_array.at(i)->dump(data);
            }
        } else if (m_type == CBOR_TYPE_MAP){
-           for(auto key = m_map.begin(); key!=m_map.end(); key++){
-               pair<cbor*, cbor*> p = *key;
+           for(cbor* key: m_map){
+               cbor* value = *(m_map.get(key));
 
-               p.first->dump(data);
-               p.second->dump(data);
+               key->dump(data);
+               value->dump(data);
            }
-       } else if (m_type == CBOR_TYPE_STRING){
+       } else if (m_type == CBOR_TYPE_String){
             for(uint16_t i=0; i<m_data.size();i++)
-                data->push_back(m_data.at(i));
+                data->append(m_data.at(i));
 
        }
 
@@ -338,7 +327,7 @@ public:
         return true;
     }
     bool is_string(){
-        if (m_type == CBOR_TYPE_STRING)
+        if (m_type == CBOR_TYPE_String)
             return true;
         else
             return false;
@@ -354,9 +343,9 @@ public:
 
 private:
     CborType_t m_type;
-    vector<uint8_t> m_data;
-    vector<cbor*> m_array;
-    vector< pair<cbor*, cbor*> > m_map;
+    List<uint8_t> m_data;
+    List<cbor*> m_array;
+    Map<cbor*, cbor*> m_map;
 };
 
 
