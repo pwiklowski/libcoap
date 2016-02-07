@@ -16,9 +16,9 @@ COAPServer::COAPServer(COAPSend sender)
 
 void COAPServer::handleMessage(COAPPacket* p){
 
-    if(p->getHeader()->t == COAP_TYPE_ACK)
+    if(p->getType() == COAP_TYPE_ACK)
     {
-        uint16_t messageId = p->getHeader()->mid;
+        uint16_t messageId = p->getMessageId();
 
         COAPResponseHandler* handler = m_responseHandlers.get(messageId);
         if (handler != 0 ){
@@ -35,7 +35,7 @@ void COAPServer::handleMessage(COAPPacket* p){
                 m_responseHandlers.remove(messageId);
         }
     }
-    else if (p->getHeader()->t == COAP_TYPE_CON)
+    else if (p->getType() == COAP_TYPE_CON)
     {
         String uri = p->getUri();
         log("handle request %s\n", uri.c_str());
@@ -44,7 +44,7 @@ void COAPServer::handleMessage(COAPPacket* p){
         COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
 
         response->setAddress(p->getAddress());
-        response->setMessageId(p->getHeader()->mid);
+        response->setMessageId(p->getMessageId());
 
         List<uint8_t> t = p->getToken();
 

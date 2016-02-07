@@ -217,7 +217,8 @@ COAPPacket::COAPPacket(){
     hdr.t = COAP_TYPE_ACK;
     hdr.tkl = 0;
     hdr.code= 0;
-    hdr.mid =0;
+    hdr.mid = 0;
+    hdr.mid_valid = false;
 }
 
 void COAPPacket::addPayload(String payload){

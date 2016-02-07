@@ -16,6 +16,7 @@ typedef struct
                                  * client error response (4.xx), or rever error response (5.xx)
                                  * For possible values, see http://tools.ietf.org/html/rfc7252#section-12.1 */
     uint16_t mid;
+    bool mid_valid;
 } coap_header_t;
 
 typedef struct
@@ -101,7 +102,6 @@ public:
 
     int build(uint8_t *buf, size_t *buflen);
 
-    coap_header_t* getHeader(){ return &hdr;}
     List<uint8_t> getToken(){ return m_token;}
 
     List<uint8_t>* getPayload(){ return &m_payload; }
@@ -120,7 +120,12 @@ public:
 
     void setToken(uint16_t token){ hdr.tkl = 2; m_token.append(token); m_token.append(token >> 8); }
     void setToken(List<uint8_t> token){ hdr.tkl = token.size(); m_token = token; }
-    void setMessageId(uint16_t id){hdr.mid = id;}
+    void setMessageId(uint16_t id){hdr.mid = id; hdr.mid_valid = true;}
+    uint16_t getMessageId(){ return hdr.mid;}
+    bool isValidMessageId(){ return hdr.mid_valid; }
+
+    uint8_t getCode() { return hdr.code; }
+    uint8_t getType() { return hdr.t; }
 
 
     COAPOption* getOption(coap_option_num_t option);
