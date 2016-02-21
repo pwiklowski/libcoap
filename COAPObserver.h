@@ -4,7 +4,6 @@
 #include "String.h"
 #include "List.h"
 #include <stdint.h>
-#include <functional>
 #include "COAPServer.h"
 
 

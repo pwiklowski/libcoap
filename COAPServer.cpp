@@ -3,13 +3,11 @@
 #include "String.h"
 #include "log.h"
 #include "COAPObserver.h"
+#include <cstddef>
 
-
-using namespace std;
-
-COAPServer::COAPServer(COAPSend sender)
+COAPServer::COAPServer(COAPSend sender):
+    m_sender(sender)
 {
-    m_sender = sender;
 }
 
 
@@ -77,12 +75,12 @@ void COAPServer::handleMessage(COAPPacket* p){
                     if (o->getToken() == p->getToken()){
                         o->handle(p);
                         log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
-                        m_sender(response, 0);
+                        m_sender(response, nullptr);
                         return;
                     }
                 }
                 response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
-                m_sender(response, 0);
+                m_sender(response, nullptr);
                 return;
             }
         }
@@ -97,7 +95,7 @@ void COAPServer::handleMessage(COAPPacket* p){
             response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
         }
 
-        m_sender(response, 0);
+        m_sender(response, nullptr);
     }
 }
 
@@ -143,7 +141,7 @@ void COAPServer::notify(String href, List<uint8_t> data){
 
             p->addOption(new COAPOption(COAP_OPTION_CONTENT_FORMAT, content_type));
             p->addPayload(data);
-            m_sender(p, 0);
+            m_sender(p, nullptr);
         }
     }
 }

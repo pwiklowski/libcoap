@@ -6,10 +6,6 @@
 
 #define packet_log(line, ...) //log(line, ## __VA_ARGS__ )
 
-using namespace std;
-
-
-
 
 
 COAPPacket::COAPPacket(uint8_t* data, size_t len, String address)

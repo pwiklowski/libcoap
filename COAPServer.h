@@ -5,17 +5,18 @@
 #include "COAPPacket.h"
 #include "List.h"
 #include "Map.h"
-#include <functional>
+#include "FastFunc.hpp"
 #include <iostream>
+
 
 
 
 class COAPServer;
 class COAPObserver;
 
-typedef std::function<void(COAPPacket*)> COAPResponseHandler;
-typedef std::function<bool(COAPServer*, COAPPacket*, COAPPacket*)> COAPCallback;
-typedef std::function<void(COAPPacket* packet, COAPResponseHandler func)> COAPSend;
+typedef ssvu::FastFunc< void(COAPPacket*)> COAPResponseHandler;
+typedef ssvu::FastFunc< bool(COAPServer*, COAPPacket*, COAPPacket*)> COAPCallback;
+typedef ssvu::FastFunc< void(COAPPacket* packet, COAPResponseHandler func)> COAPSend;
 
 
 class COAPServer

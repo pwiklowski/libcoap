@@ -4,8 +4,6 @@
 #include "List.h"
 #include <stdint.h>
 
-using namespace std;
-
 
 class COAPOption
 {
