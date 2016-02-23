@@ -4,6 +4,7 @@
 #include "String.h"
 #include "List.h"
 #include "Map.h"
+#include <stdint.h>
 
 using namespace std;
 
