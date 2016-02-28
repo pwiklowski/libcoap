@@ -124,7 +124,22 @@ void COAPServer::addResource(String url, COAPCallback callback){
     m_callbacks.insert(url, callback);
 }
 
+
+void COAPServer::tick(){
+    m_tick++;
+
+    for(uint16_t messageId: m_responseHandlers){
+        if (messageId == 0) continue;
+        uint32_t tick = m_timestamps.get(messageId);
+        COAPPacket* p = m_packets.get(messageId);
+        if (m_tick-tick > 1){
+            log("Resend packet\n");
+            sendPacket(p, nullptr);
+            m_timestamps.insert(messageId, m_tick);
+        }
+    }
 }
+
 
 void COAPServer::notify(String href, List<uint8_t> data){
     for(uint16_t i=0; i<m_observers.size(); i++){
