@@ -6,7 +6,8 @@
 #include <cstddef>
 
 COAPServer::COAPServer(COAPSend sender):
-    m_sender(sender)
+    m_sender(sender),
+    m_tick(0)
 {
 }
 
@@ -18,8 +19,8 @@ void COAPServer::handleMessage(COAPPacket* p){
     {
         uint16_t messageId = p->getMessageId();
 
-        COAPResponseHandler handler = m_responseHandlers.get(messageId);
-        if (handler != nullptr ){
+        if (m_responseHandlers.has(messageId) ){
+            COAPResponseHandler handler = m_responseHandlers.get(messageId);
             handler(p);
 
             COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
@@ -28,9 +29,13 @@ void COAPServer::handleMessage(COAPPacket* p){
                 COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), *p->getToken(), handler);
                 m_observers.append(obs);
             }
-            log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
-            if (messageId != 0) //0 is reserverd mid or discovery
+            if (messageId != 0){//0 is reserverd mid or discovery
+                log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
+
                 m_responseHandlers.remove(messageId);
+                m_timestamps.remove(messageId);
+                m_packets.remove(messageId);
+            }
         }
     }
     else if (p->getType() == COAP_TYPE_CON)
@@ -75,12 +80,12 @@ void COAPServer::handleMessage(COAPPacket* p){
                     if (o->getToken() == *p->getToken()){
                         o->handle(p);
                         log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
-                        m_sender(response, nullptr);
+                        sendPacket(response, nullptr);
                         return;
                     }
                 }
                 response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
-                m_sender(response, nullptr);
+                sendPacket(response, nullptr);
                 return;
             }
         }
@@ -95,24 +100,35 @@ void COAPServer::handleMessage(COAPPacket* p){
             response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
         }
 
-        m_sender(response, nullptr);
+        sendPacket(response, nullptr);
     }
 }
 
+void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler){
+    if (!p->isValidMessageId()){
+        m_id++;
+        if (m_id == 0) m_id = 1;
+        p->setMessageId(m_id);
+    }
+
+    if (handler != nullptr){
+        m_responseHandlers.insert(p->getMessageId(), handler);
+        m_packets.insert(p->getMessageId(), p);
+        m_timestamps.insert(p->getMessageId(), m_tick);
+    }
+
+    m_sender(p);
+}
 
 void COAPServer::addResource(String url, COAPCallback callback){
     m_callbacks.insert(url, callback);
 }
 
-void COAPServer::addResponseHandler(uint16_t messageId, COAPResponseHandler handler){
-    m_responseHandlers.insert(messageId, handler);
 }
 
 void COAPServer::notify(String href, List<uint8_t> data){
     for(uint16_t i=0; i<m_observers.size(); i++){
         COAPObserver* o = m_observers.at(i);
-
-
 
         if (href == o->getHref()){
             COAPPacket* p = new COAPPacket();
@@ -141,7 +157,9 @@ void COAPServer::notify(String href, List<uint8_t> data){
 
             p->addOption(new COAPOption(COAP_OPTION_CONTENT_FORMAT, content_type));
             p->addPayload(data);
-            m_sender(p, nullptr);
+            sendPacket(p, [=](COAPPacket* p){
+                log("notify acked");
+            });
         }
     }
 }
