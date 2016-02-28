@@ -36,6 +36,15 @@ COAPPacket::COAPPacket(uint8_t* data, size_t len, String address)
 
 
 }
+
+COAPPacket::~COAPPacket(){
+
+    for(uint16_t i=0; i<m_options.size(); i++)
+    {
+        delete m_options.at(i);
+    }
+}
+
 bool COAPPacket::parseHeader(coap_header_t *hdr, const uint8_t *buf, size_t buflen)
 {
     if (buflen < 4)

@@ -98,12 +98,13 @@ class COAPPacket
 public:
     COAPPacket(uint8_t *data, size_t len, String address);
     COAPPacket();
+    ~COAPPacket();
 
     String getUri();
 
     int build(uint8_t *buf, size_t *buflen);
 
-    List<uint8_t> getToken(){ return m_token;}
+    List<uint8_t>* getToken(){ return &m_token;}
 
     List<uint8_t>* getPayload(){ return &m_payload; }
 

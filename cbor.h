@@ -101,12 +101,23 @@ public:
     }
     ~cbor(){
         m_data.clear();
+        for(uint16_t i=0; i<m_array.size();i++)
+            delete m_array.at(i);
+
+
+        for(cbor* k: m_map){
+            delete m_map.get(k);
+            delete k;
+
+        }
     }
 
     cbor(String str) {
         m_type = CBOR_TYPE_String;
         for(uint16_t i=0; i<str.size();i++)
             m_data.append(str.at(i));
+
+
     }
 
 
@@ -181,7 +192,7 @@ public:
        for(cbor* k: m_map){
 
            if (k->compare(key)){
-                return *m_map.get(k);
+                return m_map.get(k);
            }
        }
        return 0;
@@ -308,7 +319,7 @@ public:
            }
        } else if (m_type == CBOR_TYPE_MAP){
            for(cbor* key: m_map){
-               cbor* value = *(m_map.get(key));
+               cbor* value = m_map.get(key);
 
                key->dump(data);
                value->dump(data);
