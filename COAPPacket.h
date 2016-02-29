@@ -104,7 +104,7 @@ public:
 
     int build(uint8_t *buf, size_t *buflen);
 
-    List<uint8_t>* getToken(){ return &m_token;}
+    List<uint8_t> getToken(){ return m_token;}
 
     List<uint8_t>* getPayload(){ return &m_payload; }
 
@@ -117,7 +117,7 @@ public:
     void setType(uint16_t type){ hdr.t = type;}
     void setResonseCode(uint8_t responseCode){ hdr.code = responseCode; }
 
-    String getAddress() { return m_address;}
+    String& getAddress() { return m_address;}
     void setAddress(String address) { m_address = address;}
 
     void setToken(uint16_t token){ hdr.tkl = 2; m_token.append(token); m_token.append(token >> 8); }
