@@ -65,15 +65,19 @@ void COAPServer::handleMessage(COAPPacket* p){
             if (observe == 0){
                 COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), p->getToken());
                 m_observers.append(obs);
-
                 List<uint8_t> d;
                 d.append(obs->getNumber());
-
                 response->addOption(new COAPOption(COAP_OPTION_OBSERVE, d));
             }
             else if (observe == 1){
-                log("TODO remove observers");
-
+                for(uint16_t i=0; i<m_observers.size(); i++){
+                    COAPObserver* o = m_observers.at(i);
+                    if (o->getToken() == p->getToken()){
+                       m_observers.remove(i);
+                       log("remove observer");
+                       break;
+                    }
+                }
             }
             else{
                 for(COAPObserver* o: m_observers) {
