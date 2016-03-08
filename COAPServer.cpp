@@ -23,12 +23,7 @@ void COAPServer::handleMessage(COAPPacket* p){
             COAPResponseHandler handler = m_responseHandlers.get(messageId);
             handler(p);
 
-            COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
 
-            if (observeOption !=0){
-                COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), *p->getToken(), handler);
-                m_observers.append(obs);
-            }
             if (messageId != 0){//0 is reserverd mid or discovery
                 log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
 
@@ -85,10 +80,12 @@ void COAPServer::handleMessage(COAPPacket* p){
                 else{
                     for(COAPObserver* o: m_observers) {
                         if (o->getToken() == *p->getToken()){
-                            o->handle(p);
-                            log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
-                            sendPacket(response, nullptr);
-                            return;
+                            if (o->getHref() == p->getUri()){
+                                o->handle(p);
+                                log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
+                                sendPacket(response, nullptr);
+                                return;
+                            }
                         }
                     }
                     response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
@@ -124,6 +121,20 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
         m_packets.insert(p->getMessageId(), p);
         m_timestamps.insert(p->getMessageId(), m_tick);
     }
+    COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
+
+    if (observeOption !=0){
+        uint8_t observe = 0;
+        if (observeOption->getData()->size() > 0)
+            observe = observeOption->getData()->at(0);
+
+        if (observe == 0){
+            COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), *p->getToken(), handler);
+            m_observers.append(obs);
+        }
+    }
+
+
     log("send");
     m_sender(p);
     log(" sent\n");
@@ -196,6 +207,7 @@ void COAPServer::notify(String href, List<uint8_t> data){
                     part.append(href.at(j));
                 }
             }
+            p->addOption(new COAPOption(COAP_OPTION_URI_PATH, part));
 
             List<uint8_t> content_type;
             content_type.append(((uint16_t)COAP_CONTENTTYPE_CBOR & 0xFF00) >> 8);
