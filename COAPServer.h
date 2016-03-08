@@ -39,7 +39,7 @@ public:
     void tick();
 
     void setDiscoveryResponseHandler(uint16_t h){m_discoveryResponseHandlerId = h;}
-    void sendPacket(COAPPacket* p, COAPResponseHandler handler);
+    void sendPacket(COAPPacket* p, COAPResponseHandler handler, bool keepPacket=false);
 private:
 
     COAPSend m_sender;

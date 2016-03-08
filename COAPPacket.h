@@ -96,7 +96,7 @@ typedef enum
 class COAPPacket
 {
 public:
-    COAPPacket(uint8_t *data, size_t len, String address);
+    static COAPPacket* parse(uint8_t *data, size_t len, String address);
     COAPPacket();
     ~COAPPacket();
 
@@ -104,7 +104,7 @@ public:
 
     int build(uint8_t *buf, size_t *buflen);
 
-    List<uint8_t> getToken(){ return m_token;}
+    List<uint8_t>* getToken(){ return &m_token;}
 
     List<uint8_t>* getPayload(){ return &m_payload; }
 
@@ -117,10 +117,10 @@ public:
     void setType(uint16_t type){ hdr.t = type;}
     void setResonseCode(uint8_t responseCode){ hdr.code = responseCode; }
 
-    String& getAddress() { return m_address;}
+    String getAddress() { return m_address;}
     void setAddress(String address) { m_address = address;}
 
-    void setToken(uint16_t token){ hdr.tkl = 2; m_token.append(token); m_token.append(token >> 8); }
+    void setToken(uint16_t token){ hdr.tkl = 2; m_token.clear(); m_token.append(token); m_token.append(token >> 8); }
     void setToken(List<uint8_t> token){ hdr.tkl = token.size(); m_token = token; }
     void setMessageId(uint16_t id){hdr.mid = id; hdr.mid_valid = true;}
     uint16_t getMessageId(){ return hdr.mid;}
@@ -140,9 +140,9 @@ private:
     List<COAPOption*> m_options;
     String m_address;
 
-    bool parseHeader(coap_header_t *hdr, const uint8_t *buf, size_t buflen);
-    bool parseToken(const coap_header_t *hdr, const uint8_t *buf, size_t buflen);
-    bool parseOptions(const coap_header_t *hdr, const uint8_t *buf, size_t buflen);
+    bool parseHeader(const uint8_t *buf, size_t buflen);
+    bool parseToken(const uint8_t *buf, size_t buflen);
+    bool parseOptions(const uint8_t *buf, size_t buflen);
     bool parseOption(uint16_t *running_delta, const uint8_t **buf, size_t buflen);
 
 

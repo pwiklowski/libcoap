@@ -26,7 +26,7 @@ void COAPServer::handleMessage(COAPPacket* p){
             COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
 
             if (observeOption !=0){
-                COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), p->getToken(), handler);
+                COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), *p->getToken(), handler);
                 m_observers.append(obs);
             }
             if (messageId != 0){//0 is reserverd mid or discovery
@@ -34,94 +34,103 @@ void COAPServer::handleMessage(COAPPacket* p){
 
                 m_responseHandlers.remove(messageId);
                 m_timestamps.remove(messageId);
+                delete m_packets.get(messageId);
                 m_packets.remove(messageId);
             }
         }
+        delete p;
+
     }
     else if (p->getType() == COAP_TYPE_CON)
     {
-        String uri = p->getUri();
-        log("handle request %s\n", uri.c_str());
-
         COAPPacket* response = new COAPPacket();
-        COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
-
         response->setAddress(p->getAddress());
         response->setMessageId(p->getMessageId());
 
-        List<uint8_t> t = p->getToken();
+        List<uint8_t>* t = p->getToken();
 
-        if (t.size() == 2){
-            uint16_t token = t.at(1) << 8 | t.at(0);
+        if (t->size() == 2){
+            uint16_t token = t->at(1) << 8 | t->at(0);
             response->setToken(token);
         }
 
-        if (observeOption)
-        {
-            uint8_t observe = 0;
-            if (observeOption->getData()->size() > 0)
-                observe = observeOption->getData()->at(0);
+        String uri = p->getUri();
+        if (uri.size() >0){
+            log("handle request %s\n", uri.c_str());
 
-            if (observe == 0){
-                COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), p->getToken());
-                m_observers.append(obs);
-                List<uint8_t> d;
-                d.append(obs->getNumber());
-                response->addOption(new COAPOption(COAP_OPTION_OBSERVE, d));
-            }
-            else if (observe == 1){
-                for(uint16_t i=0; i<m_observers.size(); i++){
-                    COAPObserver* o = m_observers.at(i);
-                    if (o->getToken() == p->getToken()){
-                       m_observers.remove(i);
-                       log("remove observer");
-                       break;
+            COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
+            if (observeOption)
+            {
+                uint8_t observe = 0;
+                if (observeOption->getData()->size() > 0)
+                    observe = observeOption->getData()->at(0);
+
+                if (observe == 0){
+                    COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), *p->getToken());
+                    m_observers.append(obs);
+                    List<uint8_t> d;
+                    d.append(obs->getNumber());
+                    response->addOption(new COAPOption(COAP_OPTION_OBSERVE, d));
+                }
+                else if (observe == 1){
+                    for(uint16_t i=0; i<m_observers.size(); i++){
+                        COAPObserver* o = m_observers.at(i);
+                        if (o->getToken() == *p->getToken()){
+                           m_observers.remove(i);
+                           log("remove observer");
+                           break;
+                        }
                     }
                 }
-            }
-            else{
-                for(COAPObserver* o: m_observers) {
-                    if (o->getToken() == p->getToken()){
-                        o->handle(p);
-                        log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
-                        sendPacket(response, nullptr);
-                        return;
+                else{
+                    for(COAPObserver* o: m_observers) {
+                        if (o->getToken() == *p->getToken()){
+                            o->handle(p);
+                            log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
+                            sendPacket(response, nullptr);
+                            return;
+                        }
                     }
+                    response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
+                    sendPacket(response, nullptr);
+                    return;
                 }
+            }
+
+            if (m_callbacks.has(uri)){
+                COAPCallback callback = m_callbacks.get(uri);
+                bool success = callback(this, p, response);
+                if (!success){
+                    response->setResonseCode(COAP_RSPCODE_FORBIDDEN);
+                }
+            }else{
                 response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
-                sendPacket(response, nullptr);
-                return;
             }
         }
-
-        if (m_callbacks.has(uri)){
-            COAPCallback callback = m_callbacks.get(uri);
-            bool success = callback(this, p, response);
-            if (!success){
-                response->setResonseCode(COAP_RSPCODE_FORBIDDEN);
-            }
-        }else{
-            response->setResonseCode(COAP_RSPCODE_NOT_FOUND);
-        }
-
         sendPacket(response, nullptr);
     }
 }
 
-void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler){
+void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool keepPacket){
+    log("sendPacket \n");
     if (!p->isValidMessageId()){
         m_id++;
         if (m_id == 0) m_id = 1;
         p->setMessageId(m_id);
     }
-
     if (handler != nullptr){
+        log("add handlers %d\n", p->getMessageId());
         m_responseHandlers.insert(p->getMessageId(), handler);
         m_packets.insert(p->getMessageId(), p);
         m_timestamps.insert(p->getMessageId(), m_tick);
     }
-
+    log("send");
     m_sender(p);
+    log(" sent\n");
+    if (handler == nullptr && !keepPacket){
+        delete p;
+        log("delete packet\n");
+    }
 }
 
 void COAPServer::addResource(String url, COAPCallback callback){
@@ -131,16 +140,20 @@ void COAPServer::addResource(String url, COAPCallback callback){
 
 void COAPServer::tick(){
     m_tick++;
+    log("tick\n");
 
     for(uint16_t messageId: m_responseHandlers){
+        log("response handler for id %d\n", messageId);
+
         if (messageId == 0) continue;
         uint32_t tick = m_timestamps.get(messageId);
         COAPPacket* p = m_packets.get(messageId);
         if (m_tick-tick > 1){
             log("Resend packet\n");
-            sendPacket(p, nullptr);
+            sendPacket(p, nullptr, true);
         }
         if (m_tick - tick > 10){
+            log("timeout remove handlers %d\n", p->getMessageId());
             // abort sending
             m_responseHandlers.remove(p->getMessageId());
             m_packets.remove(p->getMessageId());
@@ -149,7 +162,8 @@ void COAPServer::tick(){
             //check for potential observer that might died
             for(uint16_t i=0; i<m_observers.size(); i++){
                 COAPObserver* o = m_observers.at(i);
-                if (o->getToken() == p->getToken()){
+                if (o->getToken() == *p->getToken()){
+                   delete o;
                    m_observers.remove(i);
                    log("remove observer");
                    break;

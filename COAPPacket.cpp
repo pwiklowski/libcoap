@@ -6,16 +6,22 @@
 
 #define packet_log(line, ...) //log(line, ## __VA_ARGS__ )
 
+COAPPacket* COAPPacket::parse(uint8_t* data, size_t len, String address){
+    COAPPacket* p = new COAPPacket();
 
-
-COAPPacket::COAPPacket(uint8_t* data, size_t len, String address)
-{
-    if (!parseHeader(&hdr, data, len))
-        return;
-    if (!parseToken(&hdr,data,len))
-        return;
-    if (!parseOptions(&hdr, data, len))
-        return;
+    if (!p->parseHeader(data, len)){
+        delete p;
+        return nullptr;
+    }
+    if (!p->parseToken(data,len)){
+        return nullptr;
+        delete p;
+        return nullptr;
+    }
+    if (!p->parseOptions(data, len)){
+        delete p;
+        return nullptr;
+    }
 
 
     packet_log("Header:\n");
@@ -25,17 +31,10 @@ COAPPacket::COAPPacket(uint8_t* data, size_t len, String address)
     packet_log("  code 0x%02X\n", hdr.code);
     packet_log("  id   0x%02X\n", hdr.mid);
 
-
-    for(uint16_t i=0; i<m_options.size(); i++)
-    {
-        packet_log("option %d\n", i);
-        packet_log("    num %d\n", (*m_options.at(i)).getNumber());
-        packet_log("    len %d\n", (*m_options.at(i)).getData()->size());
-    }
-    m_address = address;
-
-
+    p->setAddress(address);
+    return p;
 }
+
 
 COAPPacket::~COAPPacket(){
 
@@ -45,35 +44,35 @@ COAPPacket::~COAPPacket(){
     }
 }
 
-bool COAPPacket::parseHeader(coap_header_t *hdr, const uint8_t *buf, size_t buflen)
+bool COAPPacket::parseHeader(const uint8_t *buf, size_t buflen)
 {
     if (buflen < 4)
         return false;
-    hdr->ver = (buf[0] & 0xC0) >> 6;
-    if (hdr->ver != 1)
+    hdr.ver = (buf[0] & 0xC0) >> 6;
+    if (hdr.ver != 1)
         return false;
-    hdr->t = (buf[0] & 0x30) >> 4;
-    hdr->tkl = buf[0] & 0x0F;
-    hdr->code = buf[1];
-    hdr->mid = buf[3] <<8 | buf[2];
+    hdr.t = (buf[0] & 0x30) >> 4;
+    hdr.tkl = buf[0] & 0x0F;
+    hdr.code = buf[1];
+    hdr.mid = buf[3] <<8 | buf[2];
     return true;
 }
-bool COAPPacket::parseToken(const coap_header_t *hdr, const uint8_t *buf, size_t buflen)
+bool COAPPacket::parseToken(const uint8_t *buf, size_t buflen)
 {
-    if (hdr->tkl <= 8)
+    if (hdr.tkl <= 8)
     {
-        if (4U + hdr->tkl > buflen)
+        if (4U + hdr.tkl > buflen)
             return false;
-        for (int i=0; i<hdr->tkl;i++)
+        for (int i=0; i<hdr.tkl;i++)
             m_token.append(*(buf+4+i));
         return true;
     }
     return false;
 }
-bool COAPPacket::parseOptions(const coap_header_t *hdr, const uint8_t *buf, size_t buflen)
+bool COAPPacket::parseOptions(const uint8_t *buf, size_t buflen)
 {
     uint16_t delta = 0;
-    const uint8_t *p = buf + 4 + hdr->tkl;
+    const uint8_t *p = buf + 4 + hdr.tkl;
     const uint8_t *end = buf + buflen;
     uint8_t optionsNumber = 0;
 
