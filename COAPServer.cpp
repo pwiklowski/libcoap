@@ -140,10 +140,8 @@ void COAPServer::addResource(String url, COAPCallback callback){
 
 void COAPServer::tick(){
     m_tick++;
-    log("tick\n");
 
     for(uint16_t messageId: m_responseHandlers){
-        log("response handler for id %d\n", messageId);
 
         if (messageId == 0) continue;
         uint32_t tick = m_timestamps.get(messageId);
