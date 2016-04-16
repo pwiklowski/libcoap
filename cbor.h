@@ -352,8 +352,197 @@ public:
         else
             return false;
     }
+    static const char *parse_string(cbor** item, const char *str)
+    {
+         String s;
+         char* p =  const_cast<char*>(str+1);
+
+         while(*p != '\"'){
+             s.append(*p++);
+         }
+         p++;
+
+
+         *item = new cbor(s);
+
+
+         return p;
+
+
+    }
+    static const char *skip(const char *in) {while (in && *in && (unsigned char)*in<=32) in++; return in;}
+
+    static const char *parse_object(cbor** item, const char *value)
+    {
+            *item = cbor::map();
+            cbor* key;
+            cbor* val;
+
+            if (*value!='{')	{return 0;}	/* not an object! */
+
+            value=skip(value+1);
+            if (*value=='}') return value+1;	/* empty array. */
+
+            value=skip(parse_string(&key,skip(value)));
+
+            if (*value!=':') {return 0;}	/* fail! */
+            value=skip(parse_value(&val,skip(value+1)));	/* skip any spacing, get the value. */
+            if (!value) return 0;
+
+            (*item)->toMap()->insert(key, val);
+
+            while (*value==',')
+            {
+                    cbor* key;
+                    cbor* val;
+                    value=skip(parse_string(&key, skip(value+1)));
+                    if (!value) return 0;
+
+                    if (*value!=':') {return 0;}	/* fail! */
+                    value=skip(parse_value(&val,skip(value+1)));	/* skip any spacing, get the value. */
+                    if (!value) return 0;
+
+                    (*item)->toMap()->insert(key, val);
+            }
+
+            if (*value=='}') return value+1;	/* end of array */
+            return 0;	/* malformed. */
+    }
+
+
+    static const char *parse_array(cbor** item,const char *value)
+    {
+        *item = cbor::array();
+
+        if (*value!='[')	{return 0;}	/* not an array! */
+
+        value=skip(value+1);
+        if (*value==']') return value+1;	/* empty array. */
+
+        cbor* child;
+        value=skip(parse_value(&child,skip(value)));	/* skip any spacing, get the value. */
+        if (!value) return 0;
+        (*item)->append(child);
+
+        while (*value==',')
+        {
+                cbor* new_item;
+                value=skip(parse_value(&new_item,skip(value+1)));
+                (*item)->append(new_item);
+        }
+
+        if (*value==']') return value+1;	/* end of array */
+        return 0;	/* malformed. */
+    }
+
+
+    static const char *parse_number(cbor** item,const char *num)
+    {
+            int sign=1;
+            int n=0;
+
+            if (*num=='-') sign=-1,num++;
+            if (*num=='0') num++;
+            if (*num>='1' && *num<='9'){
+                do{
+                    n = (n*10.0)+(*num++ -'0');
+                }while (*num>='0' && *num<='9');
+            }
+            *item = cbor::number(sign*n);
+            return num;
+    }
+    static const char *parse_value(cbor** item, const char *value)
+    {
+            if (!value)						return 0;	/* Fail on null. */
+            //if (!strncmp(value,"null",4))	{ item->type=cJSON_NULL;  return value+4; }
+            //if (!strncmp(value,"false",5))	{ item->type=cJSON_False; return value+5; }
+            //if (!strncmp(value,"true",4))	{ item->type=cJSON_True; item->valueint=1;	return value+4; }
+            if (*value=='\"')				{ return parse_string(item,value); }
+            if (*value=='-' || (*value>='0' && *value<='9'))	{ return parse_number(item,value); }
+            if (*value=='[')				{ return parse_array(item,value); }
+            if (*value=='{')				{ return parse_object(item,value); }
+
+            return 0;	/* failure. */
+    }
+
+
+
+
+
+
+    static String toJsonString(cbor* c){
+        String res;
+
+        if (c->getType()== CBOR_TYPE_MAP){
+            res.append("{");
+            for (cbor* key: *c->toMap()){
+                cbor* value = c->toMap()->get(key);
+                res.append(toJsonString(key));
+                res.append(": ");
+                res.append(toJsonString(value));
+                if(key != *(c->toMap()->last())){
+                    res.append(",");
+                    res.append("\n");
+                }
+
+            }
+            res.append("}");
+        }else if (c->getType() ==CBOR_TYPE_ARRAY){
+            res.append("[");
+            for (cbor* value: *c->toArray()){
+                res.append(toJsonString(value));
+
+                if(value != *(c->toArray()->last())){
+                    res.append(", ");
+                    res.append("\n");
+                }
+            }
+            res.append("]");
+        }else if (c->getType() == CBOR_TYPE_String){
+            res.append("\"");
+            res.append(c->toString());
+            res.append("\"");
+        }else if (c->getType() == CBOR_TYPE_NEGATIVE || c->getType() == CBOR_TYPE_UNSIGNED){
+            char temp[20];
+            itoa(c->toInt(), temp);
+            res.append(temp);
+        }
+
+
+        return res;
+    }
+
+
 
 private:
+    static void reverse(char* s)
+    {
+        int i, j;
+        char c;
+
+        for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+            c = s[i];
+            s[i] = s[j];
+            s[j] = c;
+        }
+    }
+
+    static void itoa(int n, char* s)
+    {
+         int i, sign;
+
+         if ((sign = n) < 0)  /* записываем знак */
+             n = -n;          /* делаем n положительным числом */
+         i = 0;
+         do {       /* генерируем цифры в обратном порядке */
+             s[i++] = n % 10 + '0';   /* берем следующую цифру */
+         } while ((n /= 10) > 0);     /* удаляем */
+         if (sign < 0)
+             s[i++] = '-';
+         s[i] = '\0';
+         reverse(s);
+    }
+
     CborType_t m_type;
     List<uint8_t> m_data;
     List<cbor*> m_array;
