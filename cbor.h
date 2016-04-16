@@ -5,8 +5,7 @@
 #include "List.h"
 #include "Map.h"
 #include <stdint.h>
-
-using namespace std;
+#include <stdlib.h>
 
 enum CborType_t {
     CBOR_TYPE_UNSIGNED,
@@ -112,48 +111,48 @@ public:
         }
     }
 
-    cbor(String str) {
-        m_type = CBOR_TYPE_String;
+    static cbor* string(String str) {
+        cbor* res = new cbor(CBOR_TYPE_String);
+        res->m_type = CBOR_TYPE_String;
         for(uint16_t i=0; i<str.size();i++)
-            m_data.append(str.at(i));
-
-
+            res->m_data.append(str.at(i));
+        return res;
     }
 
 
-    cbor(long long v) {
-        unsigned long long value;
-        if (value < 0){
-            m_type = CBOR_TYPE_NEGATIVE;
-            value = -(value+1);
+    static cbor* number(long long v) {
+
+        cbor* res =  new cbor(CBOR_TYPE_UNSIGNED);
+        long long value;
+        if (v < 0){
+            res->m_type = CBOR_TYPE_NEGATIVE;
+            value = -(v+1);
         } else{
             value = v;
-            m_type = CBOR_TYPE_UNSIGNED;
+            res->m_type = CBOR_TYPE_UNSIGNED;
         }
 
-        if(value < 256ULL) {
-            m_data.append(value);
-        } else if(value < 65536ULL) {
-            m_data.append(value >> 8);
-            m_data.append(value);
-        } else if(value < 4294967296ULL) {
-            m_data.append(value >> 24);
-            m_data.append(value >> 16);
-            m_data.append(value >> 8);
-            m_data.append(value);
+        if(value < 256) {
+           res->m_data.append(value);
+        } else if(value < 65536) {
+            res-> m_data.append(value >> 8);
+           res->m_data.append(value);
+        } else if(value < 4294967296) {
+            res->m_data.append(value >> 24);
+            res->m_data.append(value >> 16);
+            res->m_data.append(value >> 8);
+            res->m_data.append(value);
         } else {
-            m_data.append(value >> 56);
-            m_data.append(value >> 48);
-            m_data.append(value >> 40);
-            m_data.append(value >> 32);
-            m_data.append(value >> 24);
-            m_data.append(value >> 16);
-            m_data.append(value >> 8);
-            m_data.append(value);
+            res->m_data.append(value >> 56);
+            res->m_data.append(value >> 48);
+            res-> m_data.append(value >> 40);
+            res->m_data.append(value >> 32);
+            res-> m_data.append(value >> 24);
+            res-> m_data.append(value >> 16);
+            res-> m_data.append(value >> 8);
+            res-> m_data.append(value);
         }
-
-
-
+        return res;
     }
 
     cbor(List<cbor*> array) {
@@ -253,7 +252,6 @@ public:
     List<uint8_t>* data(){
         return &m_data;
     }
-
 
     void dump(List<uint8_t>* data){
        uint8_t majorType = m_type << 5;
@@ -362,13 +360,8 @@ public:
          }
          p++;
 
-
-         *item = new cbor(s);
-
-
+         *item = cbor::string(s);
          return p;
-
-
     }
     static const char *skip(const char *in) {while (in && *in && (unsigned char)*in<=32) in++; return in;}
 
