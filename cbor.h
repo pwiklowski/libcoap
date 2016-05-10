@@ -321,7 +321,18 @@ public:
 
         return true;
     }
+    cbor& operator = (const cbor& rhs) {
+        m_data.clear();
+        m_array.clear();
+        m_map.clear();
 
+        m_type = rhs.m_type;
+        m_data = rhs.m_data;
+        m_array = rhs.m_array;
+        m_map = rhs.m_map;
+
+        return *this;
+    }
     bool operator != (const cbor& rhs) const
     {
         if (*this == rhs) return false;
