@@ -11,6 +11,12 @@ COAPServer::COAPServer(COAPSend sender):
 {
 }
 
+COAPServer::~COAPServer(){
+    for (uint16_t i=0; i<m_observers.size();i++)
+        delete m_observers.at(i);
+
+}
+
 
 
 void COAPServer::handleMessage(COAPPacket* p){

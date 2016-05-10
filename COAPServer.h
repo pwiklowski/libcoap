@@ -22,6 +22,7 @@ class COAPServer
 {
 public:
     COAPServer(COAPSend sender);
+    ~COAPServer();
 
     void handleMessage(COAPPacket* p);
     void addResource(String url, COAPCallback callback);
