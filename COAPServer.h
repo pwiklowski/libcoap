@@ -35,7 +35,7 @@ public:
     void setInterface(String interface){ m_interface = interface; }
     String getInterface(){ return m_interface; }
 
-    void notify(String href, List<uint8_t> data);
+    void notify(String href, List<uint8_t> *data);
 
     void tick();
 

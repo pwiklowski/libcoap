@@ -189,7 +189,7 @@ void COAPServer::tick(){
 }
 
 
-void COAPServer::notify(String href, List<uint8_t> data){
+void COAPServer::notify(String href, List<uint8_t>* data){
     for(uint16_t i=0; i<m_observers.size(); i++){
         COAPObserver* o = m_observers.at(i);
 
@@ -220,7 +220,9 @@ void COAPServer::notify(String href, List<uint8_t> data){
             content_type.append(((uint16_t)COAP_CONTENTTYPE_CBOR & 0xFF));
 
             p->addOption(new COAPOption(COAP_OPTION_CONTENT_FORMAT, content_type));
-            p->addPayload(data);
+            p->addPayload(*data);
+
+
             sendPacket(p, [=](COAPPacket* p){
                 log("notify acked");
             });
