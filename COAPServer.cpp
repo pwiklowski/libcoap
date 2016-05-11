@@ -39,8 +39,6 @@ void COAPServer::handleMessage(COAPPacket* p){
                 m_packets.remove(messageId);
             }
         }
-        delete p;
-
     }
     else if (p->getType() == COAP_TYPE_CON)
     {
