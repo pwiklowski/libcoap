@@ -75,6 +75,7 @@ void COAPServer::handleMessage(COAPPacket* p){
                     for(uint16_t i=0; i<m_observers.size(); i++){
                         COAPObserver* o = m_observers.at(i);
                         if (o->getToken() == *p->getToken()){
+                           delete o;
                            m_observers.remove(i);
                            log("remove observer");
                            break;
@@ -177,16 +178,6 @@ void COAPServer::tick(){
             m_packets.remove(p->getMessageId());
             m_timestamps.remove(p->getMessageId());
 
-            //check for potential observer that might died
-            for(uint16_t i=0; i<m_observers.size(); i++){
-                COAPObserver* o = m_observers.at(i);
-                if (o->getToken() == *p->getToken()){
-                   delete o;
-                   m_observers.remove(i);
-                   log("remove observer");
-                   break;
-                }
-            }
         }
     }
 }
@@ -226,8 +217,14 @@ void COAPServer::notify(String href, List<uint8_t>* data){
             p->addPayload(*data);
 
 
-            sendPacket(p, [=](COAPPacket* p){
-                log("notify acked");
+            sendPacket(p, [=](COAPPacket* pa){
+                if (pa){
+                    log("Notify acked\n");
+                }else{
+                    log("Notify timeout, remove observer\n");
+                    delete o;
+                    m_observers.remove(i);
+                }
             });
         }
     }
