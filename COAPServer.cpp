@@ -169,6 +169,7 @@ void COAPServer::tick(){
             log("timeout remove handlers %d\n", p->getMessageId());
             // abort sending
             m_responseHandlers.remove(p->getMessageId());
+            delete m_packets.get(p->getMessageId());
             m_packets.remove(p->getMessageId());
             m_timestamps.remove(p->getMessageId());
 
