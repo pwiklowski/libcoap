@@ -168,6 +168,10 @@ void COAPServer::tick(){
         if (m_tick - tick > 10){
             log("timeout remove handlers %d\n", p->getMessageId());
             // abort sending
+            COAPResponseHandler handler = m_responseHandlers.get(p->getMessageId());
+            if (handler != nullptr)
+                handler(0);
+
             m_responseHandlers.remove(p->getMessageId());
             delete m_packets.get(p->getMessageId());
             m_packets.remove(p->getMessageId());
