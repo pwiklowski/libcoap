@@ -21,7 +21,3 @@ COAPObserver::COAPObserver(String address, String href, List<uint8_t> token, COA
     m_handler = handler;
 }
 
-void COAPObserver::notify(){
-
-    log("notify");
-}

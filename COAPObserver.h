@@ -12,7 +12,6 @@ class COAPObserver
 public:
     COAPObserver(String address, String href, List<uint8_t> token);
     COAPObserver(String address, String href, List<uint8_t> token, COAPResponseHandler handler);
-    void notify();
 
     String getHref() { return m_href; }
     String getAddress() { return m_address; }
