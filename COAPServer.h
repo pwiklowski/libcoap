@@ -42,7 +42,7 @@ public:
     void setDiscoveryResponseHandler(uint16_t h){m_discoveryResponseHandlerId = h;}
     void sendPacket(COAPPacket* p, COAPResponseHandler handler, bool keepPacket=false);
 private:
-
+    void deleteObserver(String address, String href);
     COAPSend m_sender;
     Map<String, COAPCallback> m_callbacks;
     Map<uint16_t, COAPResponseHandler> m_responseHandlers;
