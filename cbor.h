@@ -356,12 +356,10 @@ public:
     }
     const char *parse_string(const char *str)
     {
-         String s;
          char* p =  const_cast<char*>(str+1);
 
          m_type = CBOR_TYPE_String;
          while(*p != '\"'){
-             s.append(*p++);
              m_data.append(*p++);
          }
          p++;
