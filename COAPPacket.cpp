@@ -223,6 +223,8 @@ COAPPacket::COAPPacket(){
     hdr.code= 0;
     hdr.mid = 0;
     hdr.mid_valid = false;
+
+    m_keep = false;
 }
 
 void COAPPacket::addPayload(String payload){

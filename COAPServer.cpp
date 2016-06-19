@@ -139,14 +139,10 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
         }
     }
 
-
-    log("send");
-    m_sender(p);
-    log(" sent\n");
     if (handler == nullptr && !keepPacket){
-        delete p;
-        log("delete packet\n");
+        p->setKeep(false);
     }
+    m_packetQueue.append(p);
 }
 
 void COAPServer::addResource(String url, COAPCallback callback){
@@ -158,6 +154,17 @@ void COAPServer::addResource(String url, COAPCallback callback){
 
 void COAPServer::tick(){
     m_tick++;
+
+
+    while(m_packetQueue.size() >0){
+        COAPPacket* p = m_packetQueue.at(0);
+        m_packetQueue.remove(0);
+
+        m_sender(p);
+        if (!p->keep()){
+            delete p;
+        }
+    }
 
 
     for(uint16_t messageId: m_responseHandlers){

@@ -59,6 +59,7 @@ private:
     List<COAPObserver*> m_observers;
     uint32_t m_tick;
     uint16_t m_id;
+    List<COAPPacket*> m_packetQueue;
 };
 
 #endif // COAPPacket_H
