@@ -155,17 +155,14 @@ void COAPServer::addResource(String url, COAPCallback callback){
 void COAPServer::tick(){
     m_tick++;
 
-
-    while(m_packetQueue.size() >0){
-        COAPPacket* p = m_packetQueue.at(0);
-        m_packetQueue.remove(0);
-
+    for(uint8_t i=0; i<m_packetQueue.size(); i++){
+        COAPPacket* p = m_packetQueue.at(i);
         m_sender(p);
         if (!p->keep()){
-            delete p;
+            //delete p;
         }
     }
-
+    m_packetQueue.clear();
 
     for(uint16_t messageId: m_responseHandlers){
 
