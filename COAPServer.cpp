@@ -5,10 +5,14 @@
 #include "COAPObserver.h"
 #include <cstddef>
 
+extern uint64_t get_current_ms();
+
+
+
 COAPServer::COAPServer(COAPSend sender):
-    m_sender(sender),
-    m_tick(0)
+    m_sender(sender)
 {
+
 }
 
 COAPServer::~COAPServer(){
@@ -37,6 +41,7 @@ void COAPServer::handleMessage(COAPPacket* p){
                 m_timestamps.remove(messageId);
                 delete m_packets.get(messageId);
                 m_packets.remove(messageId);
+                m_resentTimestamps.remove(messageId);
             }
         }
     }
@@ -124,7 +129,8 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
         log("add handlers %d\n", p->getMessageId());
         m_responseHandlers.insert(p->getMessageId(), handler);
         m_packets.insert(p->getMessageId(), p);
-        m_timestamps.insert(p->getMessageId(), m_tick);
+        m_timestamps.insert(p->getMessageId(), get_current_ms());
+        m_resentTimestamps.insert(p->getMessageId(), get_current_ms());
     }
     COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
 
@@ -153,7 +159,6 @@ void COAPServer::addResource(String url, COAPCallback callback){
 
 
 void COAPServer::tick(){
-    m_tick++;
 
     for(uint8_t i=0; i<m_packetQueue.size(); i++){
         COAPPacket* p = m_packetQueue.at(i);
@@ -167,11 +172,11 @@ void COAPServer::tick(){
     for(uint16_t messageId: m_responseHandlers){
 
         if (messageId == 0) continue;
-        log("tick mid=%d\n", messageId);
-        uint32_t tick = m_timestamps.get(messageId);
-        uint32_t tick_diff = m_tick - tick;
+        uint64_t tick = m_timestamps.get(messageId);
+        uint64_t tick_diff = get_current_ms()- tick;
+        uint64_t waiting = get_current_ms() - m_resentTimestamps.get(messageId);
 
-        if (tick_diff > 30){
+        if (tick_diff > 5000){
             log("timeout remove handler id=%d\n", messageId);
 
             // TODO: clean all handlers for that destination ?
@@ -185,20 +190,15 @@ void COAPServer::tick(){
                     log("call handler %d\n", &handler);
                     handler(0);
                 }
-
+                m_responseHandlers.remove(messageId); //kasowanie elementow z for eachu ?
+                delete m_packets.get(messageId);
+                m_packets.remove(messageId);
+                m_timestamps.remove(messageId);
+                m_resentTimestamps.remove(messageId);
             }
 
             log("timeout remove handler - remove handler\n");
-
-            m_responseHandlers.remove(messageId); //kasowanie elementow z for eachu ?
-            delete m_packets.get(messageId);
-            m_packets.remove(messageId);
-            m_timestamps.remove(messageId);
-
-            log("timeout remove handler 2 - get handler %d\n", m_responseHandlers.has(messageId));
-
-
-        }else if (tick_diff > 3 && tick_diff < 20 && tick_diff % 5 == 0){
+        }else if (waiting >500){
             log("Resend packet\n");
             sendPacket(m_packets.get(messageId), nullptr, true);
         }

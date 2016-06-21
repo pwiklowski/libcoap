@@ -42,13 +42,13 @@ public:
     void setDiscoveryResponseHandler(uint16_t h){m_discoveryResponseHandlerId = h;}
     void sendPacket(COAPPacket* p, COAPResponseHandler handler, bool keepPacket=false);
 private:
+    Map<uint16_t, uint64_t> m_resentTimestamps;
     void deleteObserver(String address, String href);
     COAPSend m_sender;
     Map<String, COAPCallback> m_callbacks;
     Map<uint16_t, COAPResponseHandler> m_responseHandlers;
     Map<uint16_t, COAPPacket*> m_packets;
-    Map<uint16_t, uint32_t> m_timestamps;
-
+    Map<uint16_t, uint64_t> m_timestamps;
 
     uint16_t m_discoveryResponseHandlerId;
 
@@ -57,7 +57,6 @@ private:
     uint16_t m_port;
 
     List<COAPObserver*> m_observers;
-    uint32_t m_tick;
     uint16_t m_id;
     List<COAPPacket*> m_packetQueue;
 };
