@@ -200,6 +200,7 @@ void COAPServer::tick(){
             log("timeout remove handler - remove handler\n");
         }else if (waiting >500){
             log("Resend packet\n");
+            m_resentTimestamps.insert(messageId, get_current_ms());
             sendPacket(m_packets.get(messageId), nullptr, true);
         }
     }
