@@ -164,7 +164,8 @@ void COAPServer::tick(){
         COAPPacket* p = m_packetQueue.at(i);
         m_sender(p);
         if (!p->keep()){
-            //delete p;
+            log("Do not keep this packet %d\n", p->getMessageId());
+            delete p;
         }
     }
     m_packetQueue.clear();
