@@ -7,6 +7,7 @@
 #define packet_log(line, ...) //log(line, ## __VA_ARGS__ )
 
 COAPPacket* COAPPacket::parse(uint8_t* data, size_t len, String address){
+
     COAPPacket* p = new COAPPacket();
 
     if (!p->parseHeader(data, len)){
@@ -24,12 +25,12 @@ COAPPacket* COAPPacket::parse(uint8_t* data, size_t len, String address){
     }
 
 
-    packet_log("Header:\n");
-    packet_log("  ver  0x%02X\n", hdr.ver);
-    packet_log("  t    0x%02X\n", hdr.t);
-    packet_log("  tkl  0x%02X\n", hdr.tkl);
-    packet_log("  code 0x%02X\n", hdr.code);
-    packet_log("  id   0x%02X\n", hdr.mid);
+//    packet_log("Header:\n");
+//    packet_log("  ver  0x%02X\n", p->hdr.ver);
+//    packet_log("  t    0x%02X\n", p->hdr.t);
+//    packet_log("  tkl  0x%02X\n", p->hdr.tkl);
+//    packet_log("  code 0x%02X\n", p->hdr.code);
+//    packet_log("  id   0x%02X\n", p->hdr.mid);
 
     p->setAddress(address);
     return p;
@@ -37,11 +38,12 @@ COAPPacket* COAPPacket::parse(uint8_t* data, size_t len, String address){
 
 
 COAPPacket::~COAPPacket(){
-
+    packet_log("delete packet %d %d\n", hdr.mid, getType());
     for(uint16_t i=0; i<m_options.size(); i++)
     {
         delete m_options.at(i);
     }
+
 }
 
 bool COAPPacket::parseHeader(const uint8_t *buf, size_t buflen)
