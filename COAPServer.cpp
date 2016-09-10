@@ -170,8 +170,7 @@ void COAPServer::addResource(String url, COAPCallback callback){
 
 
 
-void COAPServer::tick(){
-
+void COAPServer::sendPackets(){
     for(uint8_t i=0; i<m_packetQueue.size(); i++){
         COAPPacket* p = m_packetQueue.at(i);
         m_sender(p);
@@ -181,8 +180,8 @@ void COAPServer::tick(){
         }
     }
     m_packetQueue.clear();
-
-
+}
+void COAPServer::checkPackets(){
     for(uint16_t messageId: m_responseHandlers){
 
         if (messageId == 0) continue;

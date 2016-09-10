@@ -37,7 +37,8 @@ public:
 
     void notify(String href, List<uint8_t> *data);
 
-    void tick();
+    void checkPackets();
+    void sendPackets();
 
     void setDiscoveryResponseHandler(uint16_t h){m_discoveryResponseHandlerId = h;}
     void sendPacket(COAPPacket* p, COAPResponseHandler handler, bool keepPacket=false);
