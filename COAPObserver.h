@@ -17,9 +17,20 @@ public:
     String getAddress() { return m_address; }
     List<uint8_t> getToken() { return m_token; }
 
-    uint8_t getNumber() { return m_number++;}
+    uint8_t getNumber() {
+        m_number++;
 
-    void handle(COAPPacket* p){m_handler(p);}
+        if (m_number==0) // 0 and 1 are reserverd
+            m_number = 2;
+
+        return m_number;
+    }
+
+    void handle(COAPPacket* p){
+        if (m_handler.storage !=0)
+            m_handler(p);
+
+    }
 
 private:
     String m_href;
