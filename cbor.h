@@ -509,7 +509,7 @@ public:
                 res.append(toJsonString(&key));
                 res.append(": ");
                 res.append(toJsonString(&value));
-                if(key != *(c->toMap()->last())){
+                if(key != c->toMap()->keys().at(  c->toMap()->keys().size()-1)){
                     res.append(",");
                     res.append("\n");
                 }
@@ -521,7 +521,7 @@ public:
             for (cbor value: *c->toArray()){
                 res.append(toJsonString(&value));
 
-                if(value != *(c->toArray()->last())){
+                if(value != c->toArray()->at(c->toArray()->size()-1)){
                     res.append(", ");
                     res.append("\n");
                 }
