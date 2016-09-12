@@ -272,9 +272,9 @@ void COAPServer::notify(String href, List<uint8_t>* data){
 
             cs_log("notify %s\n", o->getAddress().c_str());
 
-            sendPacket(p, [=](COAPPacket* pa){
                 String a = o->getAddress();
                 String h = o->getHref();
+            sendPacket(p, [=](COAPPacket* pa){
                 if (pa){
                     cs_log("Notify acked\n");
                 }else{
