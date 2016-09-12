@@ -171,7 +171,7 @@ void COAPServer::addResource(String url, COAPCallback callback){
 
 
 void COAPServer::sendPackets(){
-    for(uint8_t i=0; i<m_packetQueue.size(); i++){
+    for(size_t i=0; i<m_packetQueue.size(); i++){
         COAPPacket* p = m_packetQueue.at(i);
         m_sender(p);
         if (!p->keep()){
