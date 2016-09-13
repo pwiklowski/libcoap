@@ -60,6 +60,7 @@ private:
     List<COAPObserver*> m_observers;
     uint16_t m_id;
     List<COAPPacket*> m_packetQueue;
+    pthread_mutex_t	mutex;
 };
 
 #endif // COAPPacket_H

@@ -12,7 +12,7 @@ extern uint64_t get_current_ms();
 COAPServer::COAPServer(COAPSend sender):
     m_sender(sender)
 {
-
+    mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 COAPServer::~COAPServer(){
@@ -154,33 +154,18 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
         }
     }
 
+    pthread_mutex_lock(&mutex);
+    m_sender(p);
     if (handler == nullptr && !keepPacket){
-        cs_log("do not keep it as handler is null %d\n", p->getMessageId());
-        p->setKeep(false);
+        delete p;
     }
-    cs_log("Add to queue %d\n", p->getMessageId());
-    m_packetQueue.append(p);
-
+    pthread_mutex_unlock(&mutex);
 }
 
 void COAPServer::addResource(String url, COAPCallback callback){
     m_callbacks.insert(url, callback);
 }
 
-
-
-
-void COAPServer::sendPackets(){
-    for(size_t i=0; i<m_packetQueue.size(); i++){
-        COAPPacket* p = m_packetQueue.at(i);
-        m_sender(p);
-        if (!p->keep()){
-            cs_log("Do not keep this packet %d\n", p->getMessageId());
-            delete p;
-        }
-    }
-    m_packetQueue.clear();
-}
 void COAPServer::checkPackets(){
     for(uint16_t messageId: m_responseHandlers){
 

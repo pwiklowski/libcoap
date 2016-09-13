@@ -134,20 +134,12 @@ public:
 
     static void parseUri(COAPPacket* p, String uri);
 
-    void setKeep(bool keep){
-        m_keep = keep;
-    }
-    bool keep(){
-        return m_keep;
-    }
-
 private:
     coap_header_t hdr;          /* Header of the packet */
     List<uint8_t> m_token;          /* Token value, size as specified by hdr.tkl */
     List<uint8_t> m_payload;
     List<COAPOption*> m_options;
     String m_address;
-    bool m_keep;
 
     bool parseHeader(const uint8_t *buf, size_t buflen);
     bool parseToken(const uint8_t *buf, size_t buflen);
