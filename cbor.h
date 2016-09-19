@@ -110,6 +110,8 @@ public:
     }
     ~cbor(){
         m_data.clear();
+        m_map.clear();
+        m_array.clear();
     }
 
     cbor(const char* str) {
