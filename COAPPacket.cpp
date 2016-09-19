@@ -139,9 +139,8 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
     for (uint8_t i=0; i<m_token.size();i++)
         *(p++) = m_token.at(i);
 
-    for ( auto i = m_options.begin(); i != m_options.end(); i++ ) {
+    for (COAPOption* option: m_options) {
 
-        COAPOption* option = (*i);
         uint32_t optDelta;
         uint8_t len, delta = 0;
 
