@@ -119,7 +119,7 @@ public:
         for(uint16_t i=0; i<strlen(str);i++)
             m_data.append(str[i]);
     }
-    cbor(String str) {
+    cbor(const String& str) {
         m_type = CBOR_TYPE_String;
         for(uint16_t i=0; i<str.size();i++)
             m_data.append(str.at(i));
@@ -187,10 +187,10 @@ public:
        }
     }
 
-    void append(cbor key, cbor value){
+    void append(const cbor& key, const cbor& value){
         m_map.insert(key, value);
     }
-    void append(cbor value){
+    void append(const cbor& value){
         m_array.append(value);
     }
 

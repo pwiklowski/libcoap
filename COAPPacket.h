@@ -100,7 +100,7 @@ public:
     COAPPacket();
     ~COAPPacket();
 
-    String getUri();
+    String& getUri();
 
     int build(uint8_t *buf, size_t *buflen);
 
