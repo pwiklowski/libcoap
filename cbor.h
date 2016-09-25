@@ -3,6 +3,7 @@
 
 #include "String.h"
 #include "List.h"
+#include "SimpleList.h"
 #include "Map.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -226,7 +227,7 @@ public:
         return value;
     }
 
-    List<uint8_t>* data(){
+    SimpleList<uint8_t>* data(){
         return &m_data;
     }
 
@@ -575,7 +576,7 @@ private:
     }
 
     CborType_t m_type;
-    List<uint8_t> m_data;
+    SimpleList<uint8_t> m_data;
     List<cbor> m_array;
     Map<cbor, cbor> m_map;
 };
