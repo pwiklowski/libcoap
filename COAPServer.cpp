@@ -1,13 +1,12 @@
 #include "COAPServer.h"
 #include <cstdio>
-#include "String.h"
 #include "log.h"
 #include "COAPObserver.h"
 #include <cstddef>
 
 extern uint64_t get_current_ms();
 
-#define cs_log(line, ...) //cs_log(line, ## __VA_ARGS__ )
+#define cs_log(line, ...) //log(line, ## __VA_ARGS__ )
 
 COAPServer::COAPServer(COAPSend sender):
     m_sender(sender)
@@ -35,18 +34,13 @@ void COAPServer::handleMessage(COAPPacket* p){
 
 
             if (messageId != 0){//0 is reserverd mid or discovery
-                cs_log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
 
                 m_responseHandlers.remove(messageId);
                 m_timestamps.remove(messageId);
                 delete m_packets.get(messageId);
                 m_packets.remove(messageId);
                 m_resentTimestamps.remove(messageId);
-
-                cs_log("%d %d %d\n", m_responseHandlers.size(), m_timestamps.size(), m_packets.size());
-
-
-
+                cs_log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
             }
         }
     }
@@ -83,12 +77,13 @@ void COAPServer::handleMessage(COAPPacket* p){
                     response->addOption(new COAPOption(COAP_OPTION_OBSERVE, d));
                 }
                 else if (observe == 1){
+                    cs_log("remove observer \n");
                     for(uint16_t i=0; i<m_observers.size(); i++){
                         COAPObserver* o = m_observers.at(i);
                         if (o->getToken() == *p->getToken()){
+                           cs_log("remove observer %d %s %s\n", o->getNumber(), o->getAddress(),o->getHref());
                            delete o;
                            m_observers.remove(i);
-                           cs_log("remove observer");
                            break;
                         }
                     }
@@ -97,8 +92,8 @@ void COAPServer::handleMessage(COAPPacket* p){
                     for(COAPObserver* o: m_observers) {
                         if (o->getToken() == *p->getToken()){
                             if (o->getHref() == p->getUri()){
+                                cs_log("notify from server received %dl %s %s\n", o->getNumber(), o->getAddress().c_str(), o->getHref().c_str());
                                 o->handle(p);
-                                cs_log("notify from server received %s %s\n", o->getAddress().c_str(), o->getHref().c_str());
                                 sendPacket(response, nullptr);
                                 return;
                             }
@@ -125,7 +120,6 @@ void COAPServer::handleMessage(COAPPacket* p){
 }
 
 void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool keepPacket){
-    log("sendPacket \n");
     if (!p->isValidMessageId()){
         m_id++;
         if (m_id == 0) m_id = 1;
@@ -134,7 +128,7 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
     }
     cs_log("sendPacket mid=%d\n", p->getMessageId());
     if (handler != nullptr){
-       cs_log("add handler %d\n", p->getMessageId());
+        cs_log("add handler %d\n", p->getMessageId());
         m_responseHandlers.insert(p->getMessageId(), handler);
         m_packets.insert(p->getMessageId(), p);
         m_timestamps.insert(p->getMessageId(), get_current_ms());
@@ -149,6 +143,8 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
 
         if (observe == 0){
             cs_log("add new observer\n");
+
+            //TODO check for duplicated observers
             COAPObserver* obs = new COAPObserver(p->getAddress(), p->getUri(), *p->getToken(), handler);
             m_observers.append(obs);
         }
@@ -158,6 +154,8 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
     m_sender(p);
     if (handler == nullptr && !keepPacket){
         delete p;
+    }else{
+        cs_log("do not delete packet %d\n", p->getMessageId());
     }
     pthread_mutex_unlock(&mutex);
 }
@@ -185,7 +183,6 @@ void COAPServer::checkPackets(){
                 cs_log("timeout remove handler - get handler %d\n", m_responseHandlers.has(messageId));
 
                 if (handler != nullptr){
-                    cs_log("call handler %d\n", &handler);
                     handler(0);
                 }
                 m_responseHandlers.remove(messageId); //kasowanie elementow z for eachu ?
@@ -194,10 +191,8 @@ void COAPServer::checkPackets(){
                 m_timestamps.remove(messageId);
                 m_resentTimestamps.remove(messageId);
             }
-
-            cs_log("timeout remove handler - remove handler\n");
-        }else if (waiting >500){
-            cs_log("Resend packet\n");
+        }else if (waiting > 1000){
+            cs_log("Resend packet %d\n", messageId);
             m_resentTimestamps.insert(messageId, get_current_ms());
             sendPacket(m_packets.get(messageId), nullptr, true);
         }
@@ -223,6 +218,7 @@ void COAPServer::deleteObserver(String address, String href){
 
 
 void COAPServer::notify(String href, List<uint8_t>* data){
+    cs_log("nofity %d\n", m_observers.size());
     for(uint16_t i=0; i<m_observers.size(); i++){
         COAPObserver* o = m_observers.at(i);
 
@@ -263,7 +259,7 @@ void COAPServer::notify(String href, List<uint8_t>* data){
                 if (pa){
                     cs_log("Notify acked\n");
                 }else{
-                    cs_log("Notify timeout, remove observer %s\n", a.c_str());
+                    cs_log("Notify timeout, remove observer %s\n", a);
                     deleteObserver(a, h);
                 }
             });
