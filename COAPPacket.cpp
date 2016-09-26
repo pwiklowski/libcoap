@@ -187,7 +187,7 @@ int COAPPacket::build(uint8_t *buf, size_t *buflen)
 }
 
 
-String& COAPPacket::getUri(){
+String COAPPacket::getUri(){
     String uri;
     for(uint8_t i=0; i<m_options.size(); i++) {
         packet_log("option %d\n", i);
