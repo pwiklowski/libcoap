@@ -11,7 +11,6 @@ extern uint64_t get_current_ms();
 COAPServer::COAPServer(COAPSend sender):
     m_sender(sender)
 {
-    mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 COAPServer::~COAPServer(){
@@ -150,14 +149,12 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
         }
     }
 
-    pthread_mutex_lock(&mutex);
     m_sender(p);
     if (handler == nullptr && !keepPacket){
         delete p;
     }else{
         cs_log("do not delete packet %d\n", p->getMessageId());
     }
-    pthread_mutex_unlock(&mutex);
 }
 
 void COAPServer::addResource(String url, COAPCallback callback){
