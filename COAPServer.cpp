@@ -169,7 +169,7 @@ void COAPServer::checkPackets(){
         uint64_t tick_diff = get_current_ms()- tick;
         uint64_t waiting = get_current_ms() - m_resentTimestamps.get(messageId);
 
-        if (tick_diff > 5000){
+        if (tick_diff > 3000){
             cs_log("timeout remove handler id=%d\n", messageId);
 
             // TODO: clean all handlers for that destination ?
@@ -250,8 +250,8 @@ void COAPServer::notify(String href, List<uint8_t>* data){
 
             cs_log("notify %s\n", o->getAddress().c_str());
 
-                String a = o->getAddress();
-                String h = o->getHref();
+            String a = o->getAddress();
+            String h = o->getHref();
             sendPacket(p, [=](COAPPacket* pa){
                 if (pa){
                     cs_log("Notify acked\n");
