@@ -150,6 +150,8 @@ public:
     uint64_t getTimestamp() { return m_timestamp; }
     uint64_t getResentTimestamp() { return m_resentTimestamp; }
 
+    COAPResponseHandler getHandler() { return m_responseHandler; }
+
 
 private:
     coap_header_t hdr;          /* Header of the packet */

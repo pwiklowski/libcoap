@@ -154,6 +154,20 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
     }
 }
 
+void COAPServer::queuePacket(COAPPacket* packet, COAPResponseHandler handler){
+    packet->setHandler(handler);
+    m_packetQueue.append(packet);
+}
+
+
+void COAPServer::sendQueuedPackets(){
+    for(size_t i=0; i<m_packetQueue.size(); i++){
+        COAPPacket* p = m_packetQueue.at(i);
+        sendPacket(p, p->getHandler());
+    }
+    m_packetQueue.clear();
+}
+
 void COAPServer::addResource(String url, COAPCallback callback){
     m_callbacks.insert(url, callback);
 }
