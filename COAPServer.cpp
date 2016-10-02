@@ -27,18 +27,13 @@ void COAPServer::handleMessage(COAPPacket* p){
     {
         uint16_t messageId = p->getMessageId();
         cs_log("ack mid=%d\n", messageId);
-        if (m_responseHandlers.has(messageId) ){
-            COAPResponseHandler handler = m_responseHandlers.get(messageId);
-            handler(p);
-
+        if (m_packets.has(messageId) ){
+            COAPPacket* packet = m_packets.get(messageId);
+            packet->callHandler(p);
 
             if (messageId != 0){//0 is reserverd mid or discovery
-
-                m_responseHandlers.remove(messageId);
-                m_timestamps.remove(messageId);
                 delete m_packets.get(messageId);
                 m_packets.remove(messageId);
-                m_resentTimestamps.remove(messageId);
                 cs_log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
             }
         }
@@ -128,10 +123,12 @@ void COAPServer::sendPacket(COAPPacket* p, COAPResponseHandler handler, bool kee
     cs_log("sendPacket mid=%d\n", p->getMessageId());
     if (handler != nullptr){
         cs_log("add handler %d\n", p->getMessageId());
-        m_responseHandlers.insert(p->getMessageId(), handler);
+
+        p->setHandler(handler);
+        p->setSendTimestamp(get_current_ms());
+        p->setResentTimestamp(get_current_ms());
+
         m_packets.insert(p->getMessageId(), p);
-        m_timestamps.insert(p->getMessageId(), get_current_ms());
-        m_resentTimestamps.insert(p->getMessageId(), get_current_ms());
     }
     COAPOption* observeOption = p->getOption(COAP_OPTION_OBSERVE);
 
@@ -162,35 +159,30 @@ void COAPServer::addResource(String url, COAPCallback callback){
 }
 
 void COAPServer::checkPackets(){
-    for(uint16_t messageId: m_responseHandlers){
+    for(uint16_t messageId: m_packets){
 
         if (messageId == 0) continue;
-        uint64_t tick = m_timestamps.get(messageId);
-        uint64_t tick_diff = get_current_ms()- tick;
-        uint64_t waiting = get_current_ms() - m_resentTimestamps.get(messageId);
+        COAPPacket* packet = m_packets.get(messageId);
 
-        if (tick_diff > 3000){
+        uint64_t tick = packet->getTimestamp();
+        uint64_t tick_diff = get_current_ms()- tick;
+        uint64_t waiting = get_current_ms() - packet->getResentTimestamp();
+
+        if (tick_diff > 300){
             cs_log("timeout remove handler id=%d\n", messageId);
 
             // TODO: clean all handlers for that destination ?
             // abort sending
 
-            if (m_responseHandlers.has(messageId)){
-                COAPResponseHandler handler = m_responseHandlers.get(messageId);
-                cs_log("timeout remove handler - get handler %d\n", m_responseHandlers.has(messageId));
+            cs_log("timeout remove handler - get handler %d\n", m_responseHandlers.has(messageId));
 
-                if (handler != nullptr){
-                    handler(0);
-                }
-                m_responseHandlers.remove(messageId); //kasowanie elementow z for eachu ?
-                delete m_packets.get(messageId);
-                m_packets.remove(messageId);
-                m_timestamps.remove(messageId);
-                m_resentTimestamps.remove(messageId);
-            }
-        }else if (waiting > 1000){
+            packet->callHandler(0);
+
+            delete m_packets.get(messageId);
+            m_packets.remove(messageId);
+        }else if (waiting > 100){
             cs_log("Resend packet %d\n", messageId);
-            m_resentTimestamps.insert(messageId, get_current_ms());
+            packet->setResentTimestamp(get_current_ms());
             sendPacket(m_packets.get(messageId), nullptr, true);
         }
     }

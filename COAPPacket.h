@@ -6,6 +6,12 @@
 #include "String.h"
 #include "List.h"
 #include "COAPOption.h"
+#include "FastFunc.hpp"
+
+class COAPPacket;
+
+
+typedef ssvu::FastFunc< void(COAPPacket*)> COAPResponseHandler;
 
 
 typedef struct
@@ -134,12 +140,28 @@ public:
 
     static void parseUri(COAPPacket* p, String uri);
 
+
+    void callHandler(COAPPacket* response) { m_responseHandler(response);}
+
+    void setHandler(COAPResponseHandler handler) { m_responseHandler = handler;}
+    void setSendTimestamp(uint64_t t) { m_timestamp = t;}
+    void setResentTimestamp(uint64_t t) { m_resentTimestamp = t;}
+
+    uint64_t getTimestamp() { return m_timestamp; }
+    uint64_t getResentTimestamp() { return m_resentTimestamp; }
+
+
 private:
     coap_header_t hdr;          /* Header of the packet */
     List<uint8_t> m_token;          /* Token value, size as specified by hdr.tkl */
     List<uint8_t> m_payload;
     List<COAPOption*> m_options;
     String m_address;
+
+    uint16_t m_resentTimestamp;
+    COAPResponseHandler m_responseHandler;
+    uint16_t m_timestamp;
+
 
     bool parseHeader(const uint8_t *buf, size_t buflen);
     bool parseToken(const uint8_t *buf, size_t buflen);
