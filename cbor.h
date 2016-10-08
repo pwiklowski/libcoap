@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum CborType_t {
+typedef enum {
     CBOR_TYPE_UNSIGNED,
     CBOR_TYPE_NEGATIVE,
     CBOR_TYPE_BINARY,
@@ -18,7 +18,7 @@ enum CborType_t {
     CBOR_TYPE_TAGGED,
     CBOR_TYPE_SIMPLE,
     CBOR_TYPE_FLOAT
-};
+}CborType_t ;
 
 
 class cbor{
@@ -342,20 +342,16 @@ public:
         return true;
     }
 
+    bool is_array(){
+        return m_type == CBOR_TYPE_ARRAY;
+    }
 
     bool is_string(){
-        if (m_type == CBOR_TYPE_String)
-            return true;
-        else
-            return false;
-
+        return m_type == CBOR_TYPE_String;
     }
 
     bool is_int(){
-        if (m_type == CBOR_TYPE_NEGATIVE || m_type == CBOR_TYPE_UNSIGNED)
-            return true;
-        else
-            return false;
+        return m_type == CBOR_TYPE_NEGATIVE || m_type == CBOR_TYPE_UNSIGNED;
     }
     const char *parse_string(const char *str)
     {
