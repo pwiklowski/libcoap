@@ -182,8 +182,8 @@ void COAPServer::checkPackets(){
         uint64_t tick_diff = get_current_ms()- tick;
         uint64_t waiting = get_current_ms() - packet->getResentTimestamp();
 
-        if (tick_diff > 300){
-            cs_log("timeout remove handler id=%d\n", messageId);
+        if (tick_diff > 1000){
+            log("timeout remove handler timediff=%d id=%d\n", tick_diff,  messageId);
 
             // TODO: clean all handlers for that destination ?
             // abort sending
@@ -195,7 +195,7 @@ void COAPServer::checkPackets(){
             delete m_packets.get(messageId);
             m_packets.remove(messageId);
         }else if (waiting > 100){
-            cs_log("Resend packet %d\n", messageId);
+            log("Resend packet %d\n", messageId);
             packet->setResentTimestamp(get_current_ms());
             sendPacket(m_packets.get(messageId), nullptr, true);
         }
