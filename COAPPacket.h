@@ -160,9 +160,9 @@ private:
     List<COAPOption*> m_options;
     String m_address;
 
-    uint16_t m_resentTimestamp;
+    uint64_t m_resentTimestamp;
     COAPResponseHandler m_responseHandler;
-    uint16_t m_timestamp;
+    uint64_t m_timestamp;
 
 
     bool parseHeader(const uint8_t *buf, size_t buflen);
