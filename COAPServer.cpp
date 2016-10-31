@@ -4,7 +4,23 @@
 #include "COAPObserver.h"
 #include <cstddef>
 
-extern uint64_t get_current_ms();
+#ifdef ESP8266
+    uint64_t get_current_ms(){
+        return xTaskGetTickCount();
+    }
+
+#else
+    #include <sys/time.h>
+    uint64_t get_current_ms(){
+        struct timeval te;
+        gettimeofday(&te, NULL); // get current time
+        long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // caculate milliseconds
+        return milliseconds;
+    }
+
+#endif
+
+
 
 #define cs_log(line, ...) //log(line, ## __VA_ARGS__ )
 

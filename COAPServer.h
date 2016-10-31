@@ -17,6 +17,7 @@ typedef ssvu::FastFunc< void(COAPPacket*)> COAPResponseHandler;
 typedef ssvu::FastFunc< bool(COAPServer*, COAPPacket*, COAPPacket*)> COAPCallback;
 typedef ssvu::FastFunc< void(COAPPacket* packet)> COAPSend;
 
+uint64_t get_current_ms();
 
 class COAPServer
 {
