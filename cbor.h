@@ -516,6 +516,8 @@ public:
                 }
             }
             res.append("]");
+        }else if (c->getType() == CBOR_TYPE_BOOLEAN){
+            res.append(c->data()->at(0) == 21 ? "true" : "false");
         }else if (c->getType() == CBOR_TYPE_String){
             res.append("\"");
             res.append(c->toString());
