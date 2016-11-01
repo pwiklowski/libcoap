@@ -193,6 +193,10 @@ public:
         return value;
     }
 
+    bool toBool(){
+        return m_data.at(0) == 21;
+    }
+
     SimpleList<uint8_t>* data(){
         return &m_data;
     }
@@ -351,6 +355,10 @@ public:
 
     bool is_string(){
         return m_type == CBOR_TYPE_String;
+    }
+
+    bool is_bool(){
+        return m_type == CBOR_TYPE_BOOLEAN;
     }
 
     bool is_int(){
