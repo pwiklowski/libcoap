@@ -16,8 +16,9 @@ typedef enum {
     CBOR_TYPE_ARRAY,
     CBOR_TYPE_MAP,
     CBOR_TYPE_TAGGED,
-    CBOR_TYPE_SIMPLE,
-    CBOR_TYPE_FLOAT
+    CBOR_TYPE_FLOAT,
+
+    CBOR_TYPE_BOOLEAN //officialy it doesn't exists but it is more convinient to have special type for it
 }CborType_t ;
 
 
@@ -104,6 +105,10 @@ public:
                 cb->data()->append(value >> 8);
                 cb->data()->append(value);
             }
+        }else if(majorType == CBOR_TYPE_FLOAT && value < 24){
+            cb->m_type = CBOR_TYPE_BOOLEAN;
+            cb->data()->append((uint8_t)value);
+
         }
 
         if (p!=0)
@@ -124,6 +129,10 @@ public:
         m_type = CBOR_TYPE_String;
         for(uint16_t i=0; i<str.size();i++)
             m_data.append(str.at(i));
+    }
+    cbor(bool value) {
+        m_type = CBOR_TYPE_BOOLEAN;
+        m_data.append(value ? 21: 20);
     }
 
 
@@ -257,9 +266,15 @@ public:
 
                 for (uint16_t i=0; i<m_data.size(); i++) data->append(m_data.at(i));
             }
-       }
+       }else if (m_type == CBOR_TYPE_BOOLEAN){
+           uint8_t d = CBOR_TYPE_FLOAT << 5;
 
-       if (m_type != CBOR_TYPE_UNSIGNED && m_type != CBOR_TYPE_NEGATIVE){
+           data->append((CBOR_TYPE_FLOAT<<5) | m_data.at(0));
+       }
+       //TODO: add support for float values
+
+       //calculate length of complex types
+       if (m_type != CBOR_TYPE_UNSIGNED && m_type != CBOR_TYPE_NEGATIVE && m_type != CBOR_TYPE_BOOLEAN){
            if(value < 24ULL) {
                data->append(majorType | value);
            } else if(value < 256ULL) {
@@ -305,9 +320,6 @@ public:
                 data->append(m_data.at(i));
 
        }
-
-
-
     }
 
     bool operator <(const cbor& rhs) const
@@ -364,6 +376,17 @@ public:
          p++;
          return p;
     }
+
+    const char *parse_boolean(const char *str, bool value)
+    {
+         char* p =  const_cast<char*>(str+1);
+
+         m_type = CBOR_TYPE_BOOLEAN;
+         m_data.append(value ? 21 : 20);
+
+         return p + (value ? 4 : 5);
+    }
+
     const char *skip(const char *in) {while (in && *in && (unsigned char)*in<=32) in++; return in;}
 
     const char *parse_object(const char *value)
@@ -481,12 +504,11 @@ public:
     }
     const char *parse_value(const char *value)
     {
-        if (!value)						return 0;	/* Fail on null. */
-        //if (!strncmp(value,"null",4))	{ item->type=cJSON_NULL;  return value+4; }
-        //if (!strncmp(value,"false",5))	{ item->type=cJSON_False; return value+5; }
-        //if (!strncmp(value,"true",4))	{ item->type=cJSON_True; item->valueint=1;	return value+4; }
+        if (!value)						return 0;
+        if (!strncmp(value,"false",5))	{ return this->parse_boolean(value, false); }
+        if (!strncmp(value,"true",4))	{ return this->parse_boolean(value, true); }
         if (*value=='\"')				{ return this->parse_string(value); }
-        if (*value=='-' || (*value>='0' && *value<='9'))	{ return this->parse_number(value); }
+        if (*value=='-' || (*value>='0' && *value<='9')){ return this->parse_number(value); }
         if (*value=='[')				{ return this->parse_array(value); }
         if (*value=='{')				{ return this->parse_object(value); }
 
