@@ -85,26 +85,7 @@ public:
                 cb->append(key, value);
             }
         }else if (majorType == CBOR_TYPE_NEGATIVE || majorType == CBOR_TYPE_UNSIGNED){
-            if(value < 256ULL) {
-                cb->data()->append(value);
-            } else if(value < 65536ULL) {
-                cb->data()->append(value >> 8);
-                cb->data()->append(value);
-            } else if(value < 4294967296ULL) {
-                cb->data()->append(value >> 24);
-                cb->data()->append(value >> 16);
-                cb->data()->append(value >> 8);
-                cb->data()->append(value);
-            } else {
-                cb->data()->append(value >> 56);
-                cb->data()->append(value >> 48);
-                cb->data()->append(value >> 40);
-                cb->data()->append(value >> 32);
-                cb->data()->append(value >> 24);
-                cb->data()->append(value >> 16);
-                cb->data()->append(value >> 8);
-                cb->data()->append(value);
-            }
+            cbor::parseNumber(cb->data(), value);
         }else if(majorType == CBOR_TYPE_FLOAT && value < 24){
             cb->m_type = CBOR_TYPE_BOOLEAN;
             cb->data()->append((uint8_t)value);
@@ -137,35 +118,11 @@ public:
 
 
     cbor(long long v) {
-        long long value;
-        if (v < 0){
-            m_type = CBOR_TYPE_NEGATIVE;
-            value = -(v+1);
-        } else{
-            value = v;
-            m_type = CBOR_TYPE_UNSIGNED;
-        }
+        parseNumberValue(&m_data, v);
+    }
 
-        if(value < 256) {
-            m_data.append(value);
-        } else if(value < 65536) {
-            m_data.append(value >> 8);
-            m_data.append(value);
-        } else if(value < 4294967296) {
-            m_data.append(value >> 24);
-            m_data.append(value >> 16);
-            m_data.append(value >> 8);
-            m_data.append(value);
-        } else {
-            m_data.append(value >> 56);
-            m_data.append(value >> 48);
-            m_data.append(value >> 40);
-            m_data.append(value >> 32);
-            m_data.append(value >> 24);
-            m_data.append(value >> 16);
-            m_data.append(value >> 8);
-            m_data.append(value);
-        }
+    cbor(int v) {
+        parseNumberValue(&m_data, v);
     }
 
     cbor(List<cbor> array) {
@@ -273,7 +230,7 @@ public:
        }
        //TODO: add support for float values
 
-       //calculate length of complex types
+       //handle complex types
        if (m_type != CBOR_TYPE_UNSIGNED && m_type != CBOR_TYPE_NEGATIVE && m_type != CBOR_TYPE_BOOLEAN){
            if(value < 24ULL) {
                data->append(majorType | value);
@@ -320,6 +277,40 @@ public:
                 data->append(m_data.at(i));
 
        }
+    }
+
+    void parseNumberValue(SimpleList<uint8_t>* data, long long v){
+        long long value;
+        if (v < 0){
+            m_type = CBOR_TYPE_NEGATIVE;
+            value = -(v+1);
+        } else{
+            value = v;
+            m_type = CBOR_TYPE_UNSIGNED;
+        }
+        cbor::parseNumber(data, value);
+    }
+    static void parseNumber(SimpleList<uint8_t>* data, long long value){
+        if(value < 256) {
+            data->append(value);
+        } else if(value < 65536) {
+            data->append(value >> 8);
+            data->append(value);
+        } else if(value < 4294967296) {
+            data->append(value >> 24);
+            data->append(value >> 16);
+            data->append(value >> 8);
+            data->append(value);
+        } else {
+            data->append(value >> 56);
+            data->append(value >> 48);
+            data->append(value >> 40);
+            data->append(value >> 32);
+            data->append(value >> 24);
+            data->append(value >> 16);
+            data->append(value >> 8);
+            data->append(value);
+        }
     }
 
     bool operator <(const cbor& rhs) const
@@ -458,9 +449,7 @@ public:
         m_data.clear();
         const char* num = skip(number);
         int sign=1;
-        int n=0;
-
-
+        long long n=0;
 
         if (*num=='-') sign=-1,num++;
         if (*num=='0') num++;
@@ -470,36 +459,7 @@ public:
             }while (*num>='0' && *num<='9');
         }
 
-        unsigned long value;
-        if (sign <0){
-            m_type = CBOR_TYPE_NEGATIVE;
-            value = n-1;
-        } else{
-            value = n;
-            m_type = CBOR_TYPE_UNSIGNED;
-        }
-
-        if(value < 256) {
-            m_data.append(value);
-        } else if(value < 65536) {
-            m_data.append(value >> 8);
-            m_data.append(value);
-        } else if(value < 4294967296) {
-            m_data.append(value >> 24);
-            m_data.append(value >> 16);
-            m_data.append(value >> 8);
-            m_data.append(value);
-        } else {
-            m_data.append(value >> 56);
-            m_data.append(value >> 48);
-            m_data.append(value >> 40);
-            m_data.append(value >> 32);
-            m_data.append(value >> 24);
-            m_data.append(value >> 16);
-            m_data.append(value >> 8);
-            m_data.append(value);
-        }
-
+        parseNumberValue(&m_data, n);
         return num;
     }
     const char *parse_value(const char *value)
