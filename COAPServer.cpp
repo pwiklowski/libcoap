@@ -100,7 +100,8 @@ void COAPServer::handleMessage(COAPPacket* p){
                 else{
                     for(COAPObserver* o: m_observers) {
                         if (o->getToken() == *p->getToken()){
-                            if (o->getHref() == p->getUri()){
+                            if (o->getHref() == p->getUri() && o->getAddress()==p->getAddress()){
+
                                 cs_log("notify from server received %dl %s %s\n", o->getNumber(), o->getAddress().c_str(), o->getHref().c_str());
                                 o->handle(p);
                                 sendPacket(response, nullptr);
