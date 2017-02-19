@@ -50,7 +50,6 @@ void COAPServer::handleMessage(COAPPacket* p){
             if (messageId != 0){//0 is reserverd mid or discovery
                 delete m_packets.get(messageId);
                 m_packets.remove(messageId);
-                cs_log("Remove response handler %d, remanin handlers=%d\n", messageId, m_responseHandlers.size());
             }
         }
     }
@@ -204,7 +203,6 @@ void COAPServer::checkPackets(){
             // TODO: clean all handlers for that destination ?
             // abort sending
 
-            cs_log("timeout remove handler - get handler %d\n", m_responseHandlers.has(messageId));
 
             packet->callHandler(0);
 
