@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include "String.h"
 #include "List.h"
+#include "SimpleList.h"
 #include "COAPOption.h"
 #include "FastFunc.hpp"
 
@@ -112,11 +113,11 @@ public:
 
     List<uint8_t>* getToken(){ return &m_token;}
 
-    List<uint8_t>* getPayload(){ return &m_payload; }
+    SimpleList<uint8_t>* getPayload(){ return &m_payload; }
 
 
     void addOption(COAPOption* option){ m_options.append(option);}
-    void addPayload(List<uint8_t> payload){ m_payload = payload; }
+    void addPayload(SimpleList<uint8_t> payload){ m_payload = payload; }
     void addPayload(String payload);
     void addPayload(uint8_t* payload, uint16_t size);
 
@@ -156,7 +157,7 @@ public:
 private:
     coap_header_t hdr;          /* Header of the packet */
     List<uint8_t> m_token;          /* Token value, size as specified by hdr.tkl */
-    List<uint8_t> m_payload;
+    SimpleList<uint8_t> m_payload;
     List<COAPOption*> m_options;
     String m_address;
 

@@ -35,7 +35,7 @@ public:
         m_map = l.m_map;
     }
 
-    static void parse(cbor* cb, List<uint8_t>* data, uint16_t* p = 0){
+    static void parse(cbor* cb, SimpleList<uint8_t>* data, uint16_t* p = 0){
         if(data->size() == 0)return;
         uint16_t pointer;
         if (p == 0)
@@ -201,7 +201,7 @@ public:
         return &m_data;
     }
 
-    void dump(List<uint8_t>* data){
+    void dump(SimpleList<uint8_t>* data){
        uint8_t majorType = m_type << 5;
 
        unsigned long long value = 0;
