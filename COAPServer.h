@@ -36,7 +36,7 @@ public:
     void setInterface(String interface){ m_interface = interface; }
     String getInterface(){ return m_interface; }
 
-    void notify(String href, SimpleList<uint8_t> *data);
+    void notify(String href, Vector<uint8_t> *data);
 
     void checkPackets();
     void sendQueuedPackets();

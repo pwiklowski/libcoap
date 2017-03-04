@@ -235,7 +235,7 @@ void COAPServer::deleteObserver(String address, String href){
 }
 
 
-void COAPServer::notify(String href, SimpleList<uint8_t>* data){
+void COAPServer::notify(String href, Vector<uint8_t>* data){
     cs_log("nofity %d\n", m_observers.size());
     for(uint16_t i=0; i<m_observers.size(); i++){
         COAPObserver* o = m_observers.at(i);

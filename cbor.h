@@ -35,7 +35,7 @@ public:
         m_map = l.m_map;
     }
 
-    static void parse(cbor* cb, SimpleList<uint8_t>* data, uint16_t* p = 0){
+    static void parse(cbor* cb, Vector<uint8_t>* data, uint16_t* p = 0){
         if(data->size() == 0)return;
         uint16_t pointer;
         if (p == 0)
@@ -197,11 +197,11 @@ public:
         return m_data.at(0) == 21;
     }
 
-    SimpleList<uint8_t>* data(){
+    Vector<uint8_t>* data(){
         return &m_data;
     }
 
-    void dump(SimpleList<uint8_t>* data){
+    void dump(Vector<uint8_t>* data){
        uint8_t majorType = m_type << 5;
 
        unsigned long long value = 0;
@@ -283,7 +283,7 @@ public:
        }
     }
 
-    void parseNumberValue(SimpleList<uint8_t>* data, long long v){
+    void parseNumberValue(Vector<uint8_t>* data, long long v){
         long long value;
         if (v < 0){
             m_type = CBOR_TYPE_NEGATIVE;
@@ -294,7 +294,7 @@ public:
         }
         cbor::parseNumber(data, value);
     }
-    static void parseNumber(SimpleList<uint8_t>* data, long long value){
+    static void parseNumber(Vector<uint8_t>* data, long long value){
         if(value < 256) {
             data->append(value);
         } else if(value < 65536) {
@@ -564,7 +564,7 @@ private:
     }
 
     CborType_t m_type;
-    SimpleList<uint8_t> m_data;
+    Vector<uint8_t> m_data;
     List<cbor> m_array;
     Map<cbor, cbor> m_map;
 };
