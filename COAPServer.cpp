@@ -61,9 +61,8 @@ void COAPServer::handleMessage(COAPPacket* p){
 
         List<uint8_t>* t = p->getToken();
 
-        if (t->size() == 2){
-            uint16_t token = t->at(1) << 8 | t->at(0);
-            response->setToken(token);
+        if (t->size() > 0){
+            response->setToken(*t);
         }
 
         String uri = p->getUri();
